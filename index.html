@@ -3,82 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikTok Bot Control</title>
-    <!-- Підключення бібліотеки Telegram Web App -->
+    <title>TikTok Farm Dashboard</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        :root {
+            --bg-color: #0f0f0f;
+            --card-bg: #1e1e1e;
+            --text-color: #ffffff;
+            --text-muted: #888888;
+            --accent-cyan: #25F4EE;
+            --accent-red: #FE2C55;
+            --border-radius: 12px;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background-color: var(--tg-theme-bg-color, #18222d);
-            color: var(--tg-theme-text-color, #ffffff);
-            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 15px;
+            margin: 0;
+            padding-bottom: 80px; /* Место для главной кнопки ТГ */
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-red));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Стиль карточек-аккордеонов */
+        .group-card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            margin-bottom: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            border-left: 4px solid var(--accent-cyan);
+            transition: all 0.3s ease;
+        }
+
+        .group-header {
+            padding: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .group-header::after {
+            content: '▼';
+            font-size: 14px;
+            color: var(--accent-cyan);
+            transition: transform 0.3s;
+        }
+
+        .group-card.active .group-header::after {
+            transform: rotate(-180deg);
+        }
+
+        .group-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out;
+            padding: 0 15px;
+        }
+
+        .group-card.active .group-content {
+            max-height: 500px;
+            padding: 10px 15px 20px 15px;
+        }
+
+        /* Элементы форм */
+        label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 12px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="number"], input[type="text"], textarea {
+            width: 100%;
+            padding: 12px;
+            background-color: #2a2a2a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: var(--text-color);
+            font-size: 15px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, textarea:focus {
+            border-color: var(--accent-cyan);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 70px;
+        }
+
+        /* Стиль свитча (тумблера) */
+        .switch-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #333;
+        }
+
+        .switch-label {
+            font-size: 15px;
+            color: var(--text-color);
+            text-transform: none;
             margin: 0;
         }
-        h2 { text-align: center; color: var(--tg-theme-button-color, #2481cc); }
-        .group-card {
-            background-color: var(--tg-theme-secondary-bg-color, #242f3d);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
         }
-        label { font-weight: bold; display: block; margin-top: 10px; }
-        input[type="number"], textarea {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border-radius: 5px;
-            border: none;
-            box-sizing: border-box;
-            background-color: var(--tg-theme-bg-color, #18222d);
-            color: var(--tg-theme-text-color, #ffffff);
+
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
         }
-        textarea { resize: vertical; min-height: 60px; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #555;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-cyan);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
     </style>
 </head>
 <body>
 
-    <h2>Управление Группами</h2>
+    <h2>Управление Сетью</h2>
     <div id="form-container"></div>
 
     <script>
-        // Ініціалізація Telegram Web App
         let tg = window.Telegram.WebApp;
-        tg.expand(); // Розгортаємо на весь екран
+        tg.expand(); 
+        
+        // Включаем кнопку и задаем ей стиль
+        tg.MainButton.text = "СОХРАНИТЬ КОНФИГУРАЦИЮ";
+        tg.MainButton.color = "#25F4EE";
+        tg.MainButton.textColor = "#000000";
+        tg.MainButton.show();
 
         const container = document.getElementById("form-container");
 
-        // Генеруємо 5 карток для 5 груп
+        // Генерация карточек для 5 групп
         for (let i = 1; i <= 5; i++) {
             container.innerHTML += `
-                <div class="group-card">
-                    <h3>📁 Группа ${i}</h3>
-                    <label>Количество видео:</label>
-                    <input type="number" id="vid_${i}" placeholder="Например: 4" value="0">
-                    <label>Описание для видео (хештеги):</label>
-                    <textarea id="desc_${i}" placeholder="Введи текст..."></textarea>
+                <div class="group-card" id="card_${i}">
+                    <div class="group-header" onclick="toggleCard(${i})">
+                        📁 Группа ${i}
+                    </div>
+                    <div class="group-content">
+                        <label>Видео на аккаунт:</label>
+                        <input type="number" id="vid_${i}" placeholder="Например: 4" value="0">
+                        
+                        <label>Юзернеймы (через запятую):</label>
+                        <textarea id="accs_${i}" placeholder="@account1, @account2..."></textarea>
+                        
+                        <label>Описание и хештеги:</label>
+                        <textarea id="desc_${i}" placeholder="Введи текст описания..."></textarea>
+                        
+                        <div class="switch-wrapper">
+                            <span class="switch-label">Авто-накрутка после поста</span>
+                            <label class="switch">
+                                <input type="checkbox" id="boost_${i}">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
             `;
         }
 
-        // Показуємо головну кнопку Telegram "Сохранить"
-        tg.MainButton.text = "СОХРАНИТЬ И ОТПРАВИТЬ БОТУ";
-        tg.MainButton.show();
+        // Логика сворачивания/разворачивания карточек
+        function toggleCard(id) {
+            const card = document.getElementById(`card_${id}`);
+            // Закрываем все остальные карточки (по желанию, можно убрать)
+            document.querySelectorAll('.group-card').forEach(c => {
+                if(c.id !== `card_${id}`) c.classList.remove('active');
+            });
+            // Переключаем текущую
+            card.classList.toggle('active');
+        }
 
-        // Обробник натискання на кнопку "Сохранить"
+        // Открываем первую группу по умолчанию
+        document.getElementById('card_1').classList.add('active');
+
+        // Отправка данных обратно в бота
         tg.MainButton.onClick(function() {
             let configData = {};
             
-            // Збираємо дані з усіх полів
             for (let i = 1; i <= 5; i++) {
+                // Превращаем строку юзернеймов "@acc1, @acc2" в чистый массив ["account1", "account2"]
+                let rawAccs = document.getElementById(`accs_${i}`).value;
+                let accList = rawAccs.split(',')
+                    .map(a => a.trim().replace('@', ''))
+                    .filter(a => a.length > 0);
+
                 configData[i.toString()] = {
                     "videos": parseInt(document.getElementById(`vid_${i}`).value) || 0,
-                    "desc": document.getElementById(`desc_${i}`).value || ""
+                    "desc": document.getElementById(`desc_${i}`).value || "",
+                    "accounts": accList,
+                    "auto_boost": document.getElementById(`boost_${i}`).checked
                 };
             }
 
-            // Відправляємо сформований JSON назад у бота
             tg.sendData(JSON.stringify(configData));
+            tg.close(); // Закрываем окно после сохранения
         });
     </script>
 </body>

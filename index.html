@@ -305,34 +305,43 @@
     <h2>Управление Сетью</h2>
     <div id="form-container"></div>
 
-    <script>
+<script>
         let tg = window.Telegram.WebApp;
+        
+        // 1. Обязательный сигнал, что приложение загружено
+        tg.ready(); 
         tg.expand(); 
         
-        // Включаем кнопку и задаем ей стиль
-        tg.MainButton.text = "СОХРАНИТЬ КОНФИГУРАЦИЮ";
-        tg.MainButton.color = "#25F4EE";
-        tg.MainButton.textColor = "#000000";
-        tg.MainButton.show();
+        // 2. Железобетонная настройка кнопки через официальный метод
+        tg.MainButton.setParams({
+            text: "СОХРАНИТЬ КОНФИГУРАЦИЮ",
+            color: "#25F4EE",
+            text_color: "#000000",
+            is_visible: true
+        });
+
+        // 3. Защита от пропадания: если Телеграм попытается скрыть кнопку из-за клавиатуры, мы ее возвращаем
+        tg.onEvent('viewportChanged', function() {
+            if (!tg.MainButton.isVisible) {
+                tg.MainButton.show();
+            }
+        });
 
         const container = document.getElementById("form-container");
 
-        // Генерация карточек для 5 групп
         for (let i = 1; i <= 5; i++) {
             container.innerHTML += `
                 <div class="group-card" id="card_${i}">
-                    <div class="group-header" onclick="toggleCard(${i})">
-                        📁 Группа ${i}
-                    </div>
+                    <div class="group-header" onclick="toggleCard(${i})">📁 Группа ${i}</div>
                     <div class="group-content">
                         <label>Видео на аккаунт:</label>
-                        <input type="number" id="vid_${i}" placeholder="Например: 4" value="0">
+                        <input type="number" id="vid_${i}" value="0">
                         
                         <label>Юзернеймы (через запятую):</label>
                         <textarea id="accs_${i}" placeholder="@account1, @account2..."></textarea>
                         
                         <label>Описание и хештеги:</label>
-                        <textarea id="desc_${i}" placeholder="Введи текст описания..."></textarea>
+                        <textarea id="desc_${i}"></textarea>
                         
                         <div class="switch-wrapper">
                             <span class="switch-label">Авто-накрутка после поста</span>
@@ -346,31 +355,42 @@
             `;
         }
 
-        // Логика сворачивания/разворачивания карточек
         function toggleCard(id) {
-            const card = document.getElementById(`card_${id}`);
-            // Закрываем все остальные карточки (по желанию, можно убрать)
-            document.querySelectorAll('.group-card').forEach(c => {
-                if(c.id !== `card_${id}`) c.classList.remove('active');
-            });
-            // Переключаем текущую
-            card.classList.toggle('active');
+            document.getElementById(`card_${id}`).classList.toggle('active');
         }
-
-        // Открываем первую группу по умолчанию
         document.getElementById('card_1').classList.add('active');
 
-        // Отправка данных обратно в бота
+        // ==========================================
+        // МАГИЯ СИНХРОНИЗАЦИИ: Читаем данные от бота
+        // ==========================================
+        const urlParams = new URLSearchParams(window.location.search);
+        const dataParam = urlParams.get('data');
+        if (dataParam) {
+            try {
+                const currentConfig = JSON.parse(decodeURIComponent(dataParam));
+                for (let i = 1; i <= 5; i++) {
+                    if (currentConfig[i]) {
+                        document.getElementById(`vid_${i}`).value = currentConfig[i].videos || 0;
+                        document.getElementById(`desc_${i}`).value = currentConfig[i].desc || "";
+                        if (currentConfig[i].accounts) {
+                            document.getElementById(`accs_${i}`).value = currentConfig[i].accounts.join(", ");
+                        }
+                        document.getElementById(`boost_${i}`).checked = currentConfig[i].auto_boost || false;
+                    }
+                }
+            } catch (e) {
+                console.error("Ошибка загрузки конфига:", e);
+            }
+        }
+
+        // ==========================================
+        // Сохранение и отправка обратно боту
+        // ==========================================
         tg.MainButton.onClick(function() {
             let configData = {};
-            
             for (let i = 1; i <= 5; i++) {
-                // Превращаем строку юзернеймов "@acc1, @acc2" в чистый массив ["account1", "account2"]
                 let rawAccs = document.getElementById(`accs_${i}`).value;
-                let accList = rawAccs.split(',')
-                    .map(a => a.trim().replace('@', ''))
-                    .filter(a => a.length > 0);
-
+                let accList = rawAccs.split(',').map(a => a.trim().replace('@', '')).filter(a => a.length > 0);
                 configData[i.toString()] = {
                     "videos": parseInt(document.getElementById(`vid_${i}`).value) || 0,
                     "desc": document.getElementById(`desc_${i}`).value || "",
@@ -378,9 +398,8 @@
                     "auto_boost": document.getElementById(`boost_${i}`).checked
                 };
             }
-
             tg.sendData(JSON.stringify(configData));
-            tg.close(); // Закрываем окно после сохранения
+            tg.close();
         });
     </script>
 </body>

@@ -308,24 +308,18 @@
 <script>
         let tg = window.Telegram.WebApp;
         
-        // 1. Обязательный сигнал, что приложение загружено
         tg.ready(); 
         tg.expand(); 
-        
-        // 2. Железобетонная настройка кнопки через официальный метод
-        tg.MainButton.setParams({
-            text: "СОХРАНИТЬ КОНФИГУРАЦИЮ",
-            color: "#25F4EE",
-            text_color: "#000000",
-            is_visible: true
-        });
 
-        // 3. Защита от пропадания: если Телеграм попытается скрыть кнопку из-за клавиатуры, мы ее возвращаем
-        tg.onEvent('viewportChanged', function() {
-            if (!tg.MainButton.isVisible) {
-                tg.MainButton.show();
-            }
-        });
+        // Налаштовуємо зовнішній вигляд кнопки
+        tg.MainButton.text = "СОХРАНИТЬ КОНФИГУРАЦИЮ";
+        tg.MainButton.color = "#25F4EE";
+        tg.MainButton.textColor = "#000000";
+
+        // ТРЮК: Чекаємо 500 мілісекунд, поки Telegram заспокоїться, і показуємо кнопку
+        setTimeout(() => {
+            tg.MainButton.show();
+        }, 500);
 
         const container = document.getElementById("form-container");
 
@@ -360,9 +354,7 @@
         }
         document.getElementById('card_1').classList.add('active');
 
-        // ==========================================
-        // МАГИЯ СИНХРОНИЗАЦИИ: Читаем данные от бота
-        // ==========================================
+        // Читаємо дані від бота (синхронізація)
         const urlParams = new URLSearchParams(window.location.search);
         const dataParam = urlParams.get('data');
         if (dataParam) {
@@ -383,9 +375,7 @@
             }
         }
 
-        // ==========================================
-        // Сохранение и отправка обратно боту
-        // ==========================================
+        // Збереження і відправка назад
         tg.MainButton.onClick(function() {
             let configData = {};
             for (let i = 1; i <= 5; i++) {

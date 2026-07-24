@@ -6,6 +6,149 @@
     <title>TikTok Farm Dashboard</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        :root { --bg-color: #0f0f0f; --card-bg: #1e1e1e; --text-color: #ffffff; --text-muted: #888888; --accent-cyan: #25F4EE; --accent-red: #FE2C55; --border-radius: 12px; }
+        body { font-family: -apple-system, sans-serif; background-color: var(--bg-color); color: var(--text-color); padding: 15px; margin: 0; padding-bottom: 90px; }
+        h2 { text-align: center; font-size: 24px; margin-bottom: 20px; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-red)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .group-card { background-color: var(--card-bg); border-radius: var(--border-radius); margin-bottom: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border-left: 4px solid var(--accent-cyan); transition: all 0.3s ease; }
+        .group-header { padding: 15px; font-size: 18px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background-color: rgba(255,255,255,0.02); }
+        .group-header::after { content: '▼'; font-size: 14px; color: var(--accent-cyan); transition: transform 0.3s; }
+        .group-card.active .group-header::after { transform: rotate(-180deg); }
+        .group-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; padding: 0 15px; }
+        .group-card.active .group-content { max-height: 800px; padding: 10px 15px 20px 15px; overflow-y: auto; }
+        label { display: block; font-size: 13px; color: var(--text-muted); margin-top: 12px; margin-bottom: 5px; text-transform: uppercase; }
+        input, textarea, select { width: 100%; padding: 12px; background-color: #2a2a2a; border: 1px solid #333; border-radius: 8px; color: var(--text-color); font-size: 15px; box-sizing: border-box; outline: none; margin-bottom: 5px; }
+        .my-save-btn { position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--accent-cyan); color: #000; padding: 20px; font-size: 16px; font-weight: bold; text-align: center; border: none; cursor: pointer; z-index: 9999; text-transform: uppercase; }
+        .task-row { background: #2a2a2a; padding: 10px; border-radius: 8px; margin-bottom: 10px; position: relative; }
+        .delete-btn { position: absolute; right: 10px; top: 10px; background: var(--accent-red); color: white; border: none; border-radius: 4px; padding: 5px 10px; font-size: 12px; font-weight: bold; cursor: pointer;}
+        .add-btn { background: rgba(37, 244, 238, 0.2); color: var(--accent-cyan); border: 1px dashed var(--accent-cyan); width: 100%; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h2>Управление Сетью</h2>
+    <div id="form-container"></div>
+    
+    <!-- Карточка Планировщика -->
+    <div class="group-card" id="card_scheduler" style="border-left-color: var(--accent-red);">
+        <div class="group-header" onclick="toggleCard('scheduler')">⏰ ПЛАНИРОВЩИК ЗАДАЧ</div>
+        <div class="group-content" id="scheduler-content">
+            <div id="tasks-container"></div>
+            <button class="add-btn" onclick="addTask()">➕ ДОБАВИТЬ ТАЙМЕР</button>
+        </div>
+    </div>
+
+    <button class="my-save-btn" onclick="saveData()">СОХРАНИТЬ КОНФИГУРАЦИЮ</button>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.ready(); tg.expand(); 
+
+        const container = document.getElementById("form-container");
+        for (let i = 1; i <= 5; i++) {
+            container.innerHTML += `
+                <div class="group-card" id="card_${i}">
+                    <div class="group-header" onclick="toggleCard('${i}')">📁 Группа ${i}</div>
+                    <div class="group-content">
+                        <label>Видео на акк:</label><input type="number" id="vid_${i}" value="0">
+                        <label>Юзернеймы:</label><textarea id="accs_${i}"></textarea>
+                    </div>
+                </div>`;
+        }
+
+        function toggleCard(id) { document.getElementById(`card_${id}`).classList.toggle('active'); }
+        document.getElementById('card_1').classList.add('active');
+
+        // ==== ЛОГИКА ТАЙМЕРОВ ====
+        let tasks = [];
+        
+        function renderTasks() {
+            const cont = document.getElementById('tasks-container');
+            cont.innerHTML = '';
+            tasks.forEach((task, index) => {
+                cont.innerHTML += `
+                    <div class="task-row" id="task_${index}">
+                        <button class="delete-btn" onclick="deleteTask(${index})">УДАЛИТЬ</button>
+                        <label>Что сделать:</label>
+                        <select id="action_${index}" onchange="updateTask(${index}, 'action', this.value)">
+                            <option value="upload" ${task.action === 'upload' ? 'selected' : ''}>🧨 Запустить выкладки</option>
+                            <option value="links" ${task.action === 'links' ? 'selected' : ''}>🔗 Собрать ссылки</option>
+                            <option value="order" ${task.action === 'order' ? 'selected' : ''}>🛒 Запустить накрутку</option>
+                        </select>
+                        <label>Частота:</label>
+                        <select id="mode_${index}" onchange="changeMode(${index}, this.value)">
+                            <option value="daily" ${task.mode === 'daily' ? 'selected' : ''}>🔁 Каждый день</option>
+                            <option value="weekly" ${task.mode === 'weekly' ? 'selected' : ''}>📅 Раз в неделю</option>
+                            <option value="once" ${task.mode === 'once' ? 'selected' : ''}>🎯 Единоразово</option>
+                        </select>
+                        
+                        ${task.mode === 'weekly' ? `
+                            <select id="day_${index}" onchange="updateTask(${index}, 'day', this.value)">
+                                <option value="mon" ${task.day === 'mon' ? 'selected' : ''}>Понедельник</option>
+                                <option value="tue" ${task.day === 'tue' ? 'selected' : ''}>Вторник</option>
+                                <option value="wed" ${task.day === 'wed' ? 'selected' : ''}>Среда</option>
+                                <option value="thu" ${task.day === 'thu' ? 'selected' : ''}>Четверг</option>
+                                <option value="fri" ${task.day === 'fri' ? 'selected' : ''}>Пятница</option>
+                                <option value="sat" ${task.day === 'sat' ? 'selected' : ''}>Суббота</option>
+                                <option value="sun" ${task.day === 'sun' ? 'selected' : ''}>Воскресенье</option>
+                            </select>
+                        ` : ''}
+                        
+                        ${task.mode === 'once' ? `
+                            <input type="date" id="date_${index}" value="${task.date || ''}" onchange="updateTask(${index}, 'date', this.value)">
+                        ` : ''}
+                        
+                        <label>Время:</label>
+                        <input type="time" id="time_${index}" value="${task.time || '12:00'}" onchange="updateTask(${index}, 'time', this.value)">
+                    </div>`;
+            });
+        }
+
+        function addTask() {
+            tasks.push({ action: 'upload', mode: 'daily', time: '12:00', day: 'mon', date: '' });
+            renderTasks();
+        }
+        function deleteTask(idx) { tasks.splice(idx, 1); renderTasks(); }
+        function updateTask(idx, key, val) { tasks[idx][key] = val; }
+        function changeMode(idx, newMode) { tasks[idx].mode = newMode; renderTasks(); }
+
+        // Загрузка данных бота
+        const urlParams = new URLSearchParams(window.location.search);
+        const dataParam = urlParams.get('data');
+        if (dataParam) {
+            try {
+                const config = JSON.parse(decodeURIComponent(dataParam));
+                for (let i = 1; i <= 5; i++) {
+                    if (config[i]) {
+                        document.getElementById(`vid_${i}`).value = config[i].videos || 0;
+                        if (config[i].accounts) document.getElementById(`accs_${i}`).value = config[i].accounts.join(", ");
+                    }
+                }
+                if (config.schedules) { tasks = config.schedules; renderTasks(); }
+            } catch (e) {}
+        }
+
+        function saveData() {
+            let configData = { "schedules": tasks };
+            for (let i = 1; i <= 5; i++) {
+                let rawAccs = document.getElementById(`accs_${i}`).value;
+                configData[i.toString()] = {
+                    "videos": parseInt(document.getElementById(`vid_${i}`).value) || 0,
+                    "accounts": rawAccs.split(',').map(a => a.trim().replace('@', '')).filter(a => a.length > 0)
+                };
+            }
+            tg.sendData(JSON.stringify(configData));
+            tg.close();
+        }
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Farm Dashboard</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
         :root {
             --bg-color: #0f0f0f;
             --card-bg: #1e1e1e;

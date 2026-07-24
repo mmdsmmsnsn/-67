@@ -61,7 +61,7 @@
         // ==== ЛОГИКА ТАЙМЕРОВ ====
         let tasks = [];
         
-        function renderTasks() {
+function renderTasks() {
             const cont = document.getElementById('tasks-container');
             cont.innerHTML = '';
             tasks.forEach((task, index) => {
@@ -70,9 +70,24 @@
                         <button class="delete-btn" onclick="deleteTask(${index})">УДАЛИТЬ</button>
                         <label>Что сделать:</label>
                         <select id="action_${index}" onchange="updateTask(${index}, 'action', this.value)">
-                            <option value="upload" ${task.action === 'upload' ? 'selected' : ''}>🧨 Запустить выкладки</option>
-                            <option value="links" ${task.action === 'links' ? 'selected' : ''}>🔗 Собрать ссылки</option>
-                            <option value="order" ${task.action === 'order' ? 'selected' : ''}>🛒 Запустить накрутку</option>
+                            <optgroup label="Массовые действия">
+                                <option value="upload_all" ${task.action === 'upload_all' ? 'selected' : ''}>🧨 Запустить ВСЕ выкладки</option>
+                                <option value="links" ${task.action === 'links' ? 'selected' : ''}>🔗 Собрать все ссылки</option>
+                                <option value="order" ${task.action === 'order' ? 'selected' : ''}>🛒 Запустить всю накрутку</option>
+                            </optgroup>
+                            <optgroup label="Отдельные группы (Выкладка)">
+                                <option value="upload_1" ${task.action === 'upload_1' ? 'selected' : ''}>📁 Выкладка: Группа 1</option>
+                                <option value="upload_2" ${task.action === 'upload_2' ? 'selected' : ''}>📁 Выкладка: Группа 2</option>
+                                <option value="upload_3" ${task.action === 'upload_3' ? 'selected' : ''}>📁 Выкладка: Группа 3</option>
+                                <option value="upload_4" ${task.action === 'upload_4' ? 'selected' : ''}>📁 Выкладка: Группа 4</option>
+                                <option value="upload_5" ${task.action === 'upload_5' ? 'selected' : ''}>📁 Выкладка: Группа 5</option>
+                            </optgroup>
+                            <optgroup label="Дополнительно">
+                                <option value="screens_all" ${task.action === 'screens_all' ? 'selected' : ''}>📸 Сделать все скриншоты</option>
+                                <option value="stats" ${task.action === 'stats' ? 'selected' : ''}>📈 Собрать статистику (TXT)</option>
+                                <option value="sheets" ${task.action === 'sheets' ? 'selected' : ''}>📊 Обновить Google Таблицу</option>
+                                <option value="sorter" ${task.action === 'sorter' ? 'selected' : ''}>🔄 Запустить сортировку видео</option>
+                            </optgroup>
                         </select>
                         <label>Частота:</label>
                         <select id="mode_${index}" onchange="changeMode(${index}, this.value)">
@@ -104,7 +119,7 @@
         }
 
         function addTask() {
-            tasks.push({ action: 'upload', mode: 'daily', time: '12:00', day: 'mon', date: '' });
+            tasks.push({ action: 'upload_all', mode: 'daily', time: '12:00', day: 'mon', date: '' });
             renderTasks();
         }
         function deleteTask(idx) { tasks.splice(idx, 1); renderTasks(); }

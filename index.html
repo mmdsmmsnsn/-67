@@ -73,6 +73,12 @@
                                     <label>Ссылка на API накрутки:</label><input type="text" id="api_${key}" value="${apiLink}">
                                     <label>Крутить просмотров (шт):</label><input type="number" id="order_${key}" value="${orderAmt}">
                                     
+                                    <label>Прокси (IP:PORT:LOG:PASS):</label>
+                                    <input type="text" id="proxy_${key}" value="${grp.proxy || ''}" placeholder="Например: 185.10.10.1:8000:log:pass">
+                                    
+                                    <label>Ссылка для смены IP (Ротация):</label>
+                                    <input type="text" id="rotate_${key}" value="${grp.rotate_link || ''}" placeholder="https://api.proxy-provider.com/change-ip...">
+                                    
                                     <label>Тема скриншотов:</label>
                                     <select id="theme_${key}">
                                         <option value="dark" ${themeVal === 'dark' ? 'selected' : ''}>🌑 Темная</option>
@@ -167,7 +173,9 @@
                     "accounts": rawAccs.split(',').map(a => a.trim().replace('@', '')).filter(a => a.length > 0),
                     "api_link": document.getElementById(`api_${id}`).value,
                     "order_amount": parseInt(document.getElementById(`order_${id}`).value) || 0,
-                    "theme": document.getElementById(`theme_${id}`).value
+                    "theme": document.getElementById(`theme_${id}`).value,
+                    "proxy": document.getElementById(`proxy_${id}`).value,
+                    "rotate_link": document.getElementById(`rotate_${id}`).value
                 };
             });
             tg.sendData(JSON.stringify(configData));

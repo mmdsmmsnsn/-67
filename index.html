@@ -22,11 +22,10 @@
         .delete-btn { position: absolute; right: 10px; top: 10px; background: var(--accent-red); color: white; border: none; border-radius: 4px; padding: 5px 10px; font-size: 12px; font-weight: bold; cursor: pointer;}
         .add-btn { background: rgba(37, 244, 238, 0.2); color: var(--accent-cyan); border: 1px dashed var(--accent-cyan); width: 100%; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; }
         
-        /* 🔥 НОВІ СТИЛІ ДЛЯ КНОПОК АКАУНТІВ */
-        .accounts-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-        .acc-tag { background: rgba(37, 244, 238, 0.1); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); padding: 6px 14px; border-radius: 20px; font-size: 13px; display: flex; align-items: center; gap: 8px; font-weight: bold; }
-        .acc-tag span { cursor: pointer; color: var(--accent-red); font-size: 16px; line-height: 1; }
-        .acc-tag span:hover { filter: brightness(1.5); }
+        /* Стили для новых слотов аккаунтов */
+        .slot-container { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #333; }
+        .slot-label { font-size: 11px; color: var(--accent-cyan); margin-bottom: 2px; margin-top: 8px; display: block; font-weight: bold; }
+        .slot-input { margin-bottom: 0px; background-color: #222; }
     </style>
 </head>
 <body>
@@ -50,7 +49,6 @@
 
         let tasks = [];
         let groupIds = [];
-        let accountsData = {}; // База даних акаунтів для кнопок
 
         function toggleCard(id) { document.getElementById(`card_${id}`).classList.toggle('active'); }
 
@@ -66,11 +64,22 @@
                     if (key !== "schedules" && !isNaN(key)) {
                         groupIds.push(key);
                         let grp = config[key];
-                        accountsData[key] = grp.accounts || []; // Записуємо масив акаунтів
+                        grp.accounts = grp.accounts || []; 
                         
                         let apiLink = grp.api_link || "";
                         let orderAmt = grp.order_amount || 0;
                         let themeVal = grp.theme || "dark";
+                        
+                        // 🔥 ГЕНЕРИРУЕМ 5 ЖЕСТКИХ СЛОТОВ ДЛЯ АККАУНТОВ
+                        let accFields = "";
+                        for(let i=0; i<5; i++) {
+                            let globalAccNum = (parseInt(key) - 1) * 5 + (i + 1);
+                            let accValue = grp.accounts[i] || '';
+                            accFields += `
+                                <span class="slot-label">Слот ${i+1} ➔ Папка: account_${globalAccNum}</span>
+                                <input type="text" id="acc_${key}_${i}" class="slot-input" value="${accValue}" placeholder="@username" oninput="renderTasks()">
+                            `;
+                        }
                         
                         container.innerHTML += `
                             <div class="group-card" id="card_${key}">
@@ -78,12 +87,9 @@
                                 <div class="group-content">
                                     <label>Видео на акк:</label><input type="number" id="vid_${key}" value="${grp.videos || 0}">
                                     
-                                    <!-- 🔥 КНОПКИ АКАУНТІВ ЗАМІСТЬ ТЕКСТУ -->
-                                    <label>Аккаунты (Нажми ✖ чтобы удалить):</label>
-                                    <div class="accounts-container" id="acc_list_${key}"></div>
-                                    <div style="display:flex; gap:10px; margin-bottom: 15px;">
-                                        <input type="text" id="new_acc_${key}" placeholder="@username" style="margin-bottom:0;">
-                                        <button class="add-btn" style="width: auto; margin-top:0; padding: 0 15px;" onclick="addAccount('${key}')">➕ Добавить</button>
+                                    <label style="color: var(--accent-red);">Привязка аккаунтов к папкам:</label>
+                                    <div class="slot-container">
+                                        ${accFields}
                                     </div>
                                     
                                     <label>Ссылка на API накрутки:</label><input type="text" id="api_${key}" value="${apiLink}">
@@ -105,9 +111,6 @@
                     }
                 }
                 
-                // Рендеримо кнопки акаунтів для кожної групи
-                groupIds.forEach(id => renderAccounts(id));
-                
                 if(groupIds.length > 0) {
                     document.getElementById(`card_${groupIds[0]}`).classList.add('active');
                 }
@@ -117,36 +120,7 @@
             } catch (e) { console.error(e); }
         }
 
-        // 🔥 ФУНКЦІЇ ДЛЯ УПРАВЛІННЯ КНОПКАМИ АКАУНТІВ
-        function renderAccounts(groupId) {
-            const list = document.getElementById(`acc_list_${groupId}`);
-            if(!list) return;
-            list.innerHTML = '';
-            accountsData[groupId].forEach((acc, idx) => {
-                let username = acc.startsWith('@') ? acc : '@' + acc;
-                list.innerHTML += `<div class="acc-tag">${username} <span onclick="removeAccount('${groupId}', ${idx})">✖</span></div>`;
-            });
-            // Оновлюємо список у планувальнику завдань
-            renderTasks();
-        }
-
-        function addAccount(groupId) {
-            const input = document.getElementById(`new_acc_${groupId}`);
-            let val = input.value.trim();
-            if(val) {
-                val = val.replace('@', ''); // прибираємо @, якщо людина ввела випадково
-                accountsData[groupId].push(val);
-                input.value = '';
-                renderAccounts(groupId);
-            }
-        }
-
-        function removeAccount(groupId, idx) {
-            accountsData[groupId].splice(idx, 1);
-            renderAccounts(groupId);
-        }
-
-        // 🔥 ПЛАНУВАЛЬНИК ТЕПЕР БАЧИТЬ ОКРЕМІ АКАУНТИ
+        // 🔥 ПЛАНИРОВЩИК ТЕПЕРЬ ЧИТАЕТ СЛОТЫ НАПРЯМУЮ
         function renderTasks() {
             const cont = document.getElementById('tasks-container');
             cont.innerHTML = '';
@@ -157,12 +131,17 @@
                 groupIds.forEach(id => {
                     dynamicUploadOptions += `<option value="upload_${id}" ${task.action === 'upload_'+id ? 'selected' : ''}>📁 Выкладка: Группа ${id}</option>`;
                     
-                    if(accountsData[id]) {
-                        accountsData[id].forEach(acc => {
-                            let username = acc.startsWith('@') ? acc : '@' + acc;
-                            let val = `up1_${id}_${username}`;
-                            dynamicAccountUploads += `<option value="${val}" ${task.action === val ? 'selected' : ''}>👤 Выкладка: ${username} (Гр ${id})</option>`;
-                        });
+                    // Собираем аккаунты из 5 слотов
+                    for(let i=0; i<5; i++) {
+                        let el = document.getElementById(`acc_${id}_${i}`);
+                        if(el) {
+                            let acc = el.value.trim().replace('@', '');
+                            if(acc) {
+                                let username = '@' + acc;
+                                let val = `up1_${id}_${username}`;
+                                dynamicAccountUploads += `<option value="${val}" ${task.action === val ? 'selected' : ''}>👤 Выкладка: ${username} (Гр ${id})</option>`;
+                            }
+                        }
                     }
                 });
 
@@ -228,10 +207,23 @@
 
         function saveData() {
             let configData = { "schedules": tasks };
+            
             groupIds.forEach(id => {
+                let accs = [];
+                // Собираем значения из 5 слотов
+                for(let i=0; i<5; i++) {
+                    let val = document.getElementById(`acc_${id}_${i}`).value.trim().replace('@', '');
+                    accs.push(val); 
+                }
+                
+                // Удаляем пустые слоты только с КОНЦА списка (чтобы не нарушать индексы посередине)
+                while(accs.length > 0 && accs[accs.length - 1] === "") {
+                    accs.pop();
+                }
+
                 configData[id] = {
                     "videos": parseInt(document.getElementById(`vid_${id}`).value) || 0,
-                    "accounts": accountsData[id], // 🔥 Відправляємо масив замість тексту
+                    "accounts": accs,
                     "api_link": document.getElementById(`api_${id}`).value,
                     "order_amount": parseInt(document.getElementById(`order_${id}`).value) || 0,
                     "theme": document.getElementById(`theme_${id}`).value,
@@ -239,6 +231,7 @@
                     "rotate_link": document.getElementById(`rotate_${id}`).value
                 };
             });
+            
             tg.sendData(JSON.stringify(configData));
             tg.close();
         }

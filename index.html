@@ -75,7 +75,6 @@
                         let apiLink = grp.api_link || "";
                         let themeVal = grp.theme || "dark";
                         
-                        // Если старых значений нет, подставляем дефолт
                         let vMin = grp.views_min || 400;
                         let vMax = grp.views_max || 500;
                         let lMin = grp.likes_min || 10;
@@ -115,7 +114,6 @@
                                     
                                     <label>Ссылка на API накрутки:</label><input type="text" id="api_${key}" value="${apiLink}">
                                     
-                                    <!-- ОБЫЧНЫЕ ВИДЕО -->
                                     <div class="box-normal">
                                         <h4 class="box-title" style="color: var(--accent-cyan);">📊 Обычные видео</h4>
                                         <div class="flex-row">
@@ -134,7 +132,6 @@
                                         <input type="number" id="sperc_${key}" value="${sPerc}">
                                     </div>
                                     
-                                    <!-- ЗАЛЕТНЫЕ ВИДЕО -->
                                     <div class="box-viral">
                                         <h4 class="box-title" style="color: var(--accent-red);">🔥 Залетные видео (Вирусные)</h4>
                                         <label>Сколько залетных видео в неделю делать:</label>
@@ -262,9 +259,10 @@
         function updateTask(idx, key, val) { tasks[idx][key] = val; }
         function changeMode(idx, newMode) { tasks[idx].mode = newMode; renderTasks(); }
 
+        // 🔥 ШИФРОВАНИЕ/УЖИМАНИЕ ДАННЫХ ДЛЯ ОБХОДА ЛИМИТА ТЕЛЕГРАМ 🔥
         function saveData() {
             try {
-                let configData = { "schedules": tasks };
+                let payload = { "s": tasks, "g": {} };
                 
                 groupIds.forEach(id => {
                     let accs = [];
@@ -280,35 +278,57 @@
                         accs.pop();
                     }
 
-                    configData[id] = {
-                        "videos": parseInt(document.getElementById(`vid_${id}`).value) || 0,
-                        "accounts": accs,
-                        "api_link": document.getElementById(`api_${id}`).value || "",
+                    payload.g[id] = {
+                        "v": parseInt(document.getElementById(`vid_${id}`).value) || 0,
+                        "a": accs,
+                        "al": document.getElementById(`api_${id}`).value || "",
                         
-                        "views_min": parseInt(document.getElementById(`vmin_${id}`).value) || 0,
-                        "views_max": parseInt(document.getElementById(`vmax_${id}`).value) || 0,
-                        "likes_min": parseInt(document.getElementById(`lmin_${id}`).value) || 0,
-                        "likes_max": parseInt(document.getElementById(`lmax_${id}`).value) || 0,
-                        "shares_min": parseInt(document.getElementById(`smin_${id}`).value) || 0,
-                        "shares_max": parseInt(document.getElementById(`smax_${id}`).value) || 0,
-                        "shares_percent": parseInt(document.getElementById(`sperc_${id}`).value) || 0,
+                        "vmin": parseInt(document.getElementById(`vmin_${id}`).value) || 0,
+                        "vmax": parseInt(document.getElementById(`vmax_${id}`).value) || 0,
+                        "lmin": parseInt(document.getElementById(`lmin_${id}`).value) || 0,
+                        "lmax": parseInt(document.getElementById(`lmax_${id}`).value) || 0,
+                        "smin": parseInt(document.getElementById(`smin_${id}`).value) || 0,
+                        "smax": parseInt(document.getElementById(`smax_${id}`).value) || 0,
+                        "sp": parseInt(document.getElementById(`sperc_${id}`).value) || 0,
                         
-                        "viral_per_week": parseInt(document.getElementById(`vvweek_${id}`).value) || 0,
-                        "viral_views_min": parseInt(document.getElementById(`vvmin_${id}`).value) || 0,
-                        "viral_views_max": parseInt(document.getElementById(`vvmax_${id}`).value) || 0,
-                        "viral_likes_min": parseInt(document.getElementById(`vlmin_${id}`).value) || 0,
-                        "viral_likes_max": parseInt(document.getElementById(`vlmax_${id}`).value) || 0,
-                        "viral_shares_min": parseInt(document.getElementById(`vsmin_${id}`).value) || 0,
-                        "viral_shares_max": parseInt(document.getElementById(`vsmax_${id}`).value) || 0,
+                        "vvw": parseInt(document.getElementById(`vvweek_${id}`).value) || 0,
+                        "vvmin": parseInt(document.getElementById(`vvmin_${id}`).value) || 0,
+                        "vvmax": parseInt(document.getElementById(`vvmax_${id}`).value) || 0,
+                        "vlmin": parseInt(document.getElementById(`vlmin_${id}`).value) || 0,
+                        "vlmax": parseInt(document.getElementById(`vlmax_${id}`).value) || 0,
+                        "vsmin": parseInt(document.getElementById(`vsmin_${id}`).value) || 0,
+                        "vsmax": parseInt(document.getElementById(`vsmax_${id}`).value) || 0,
 
-                        "theme": document.getElementById(`theme_${id}`).value || "dark",
-                        "proxy": document.getElementById(`proxy_${id}`).value || "",
-                        "rotate_link": document.getElementById(`rotate_${id}`).value || ""
+                        "th": document.getElementById(`theme_${id}`).value || "dark",
+                        "px": document.getElementById(`proxy_${id}`).value || "",
+                        "rl": document.getElementById(`rotate_${id}`).value || ""
                     };
                 });
                 
-                tg.sendData(JSON.stringify(configData));
-                tg.close();
+                // Передаем данные боту напрямую через API Telegram, игнорируя лимит WebApp
+                const botToken = "8792350101:AAFqbwVcPtpLnA6mKtDYKgOkUCjbSTkdanI";
+                const chatId = tg.initDataUnsafe.user.id;
+                
+                // Отправляем специальное сообщение боту
+                fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: JSON.stringify(payload)
+                    })
+                }).then(response => {
+                    if (response.ok) {
+                        tg.close();
+                    } else {
+                        alert("Ошибка отправки данных боту.");
+                    }
+                }).catch(error => {
+                    alert("Ошибка сети: " + error.message);
+                });
+
             } catch(e) {
                 alert("Ошибка сохранения: " + e.message);
             }

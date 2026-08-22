@@ -259,7 +259,7 @@
         function updateTask(idx, key, val) { tasks[idx][key] = val; }
         function changeMode(idx, newMode) { tasks[idx].mode = newMode; renderTasks(); }
 
-        // 🔥 ШИФРОВАНИЕ/УЖИМАНИЕ ДАННЫХ ДЛЯ ОБХОДА ЛИМИТА ТЕЛЕГРАМ 🔥
+        // 🔥 СУПЕР СЖАТИЕ ДАННЫХ ДЛЯ ОБХОДА ЛИМИТОВ TELEGRAM 🔥
         function saveData() {
             try {
                 let payload = { "s": tasks, "g": {} };
@@ -273,31 +273,29 @@
                             accs.push(val); 
                         }
                     }
-                    
-                    while(accs.length > 0 && accs[accs.length - 1] === "") {
-                        accs.pop();
-                    }
+                    while(accs.length > 0 && accs[accs.length - 1] === "") { accs.pop(); }
 
+                    // Пакуем ВСЕ ключи в минимальный размер
                     payload.g[id] = {
                         "v": parseInt(document.getElementById(`vid_${id}`).value) || 0,
                         "a": accs,
                         "al": document.getElementById(`api_${id}`).value || "",
                         
-                        "vmin": parseInt(document.getElementById(`vmin_${id}`).value) || 0,
-                        "vmax": parseInt(document.getElementById(`vmax_${id}`).value) || 0,
-                        "lmin": parseInt(document.getElementById(`lmin_${id}`).value) || 0,
-                        "lmax": parseInt(document.getElementById(`lmax_${id}`).value) || 0,
-                        "smin": parseInt(document.getElementById(`smin_${id}`).value) || 0,
-                        "smax": parseInt(document.getElementById(`smax_${id}`).value) || 0,
+                        "v1": parseInt(document.getElementById(`vmin_${id}`).value) || 0,
+                        "v2": parseInt(document.getElementById(`vmax_${id}`).value) || 0,
+                        "l1": parseInt(document.getElementById(`lmin_${id}`).value) || 0,
+                        "l2": parseInt(document.getElementById(`lmax_${id}`).value) || 0,
+                        "s1": parseInt(document.getElementById(`smin_${id}`).value) || 0,
+                        "s2": parseInt(document.getElementById(`smax_${id}`).value) || 0,
                         "sp": parseInt(document.getElementById(`sperc_${id}`).value) || 0,
                         
-                        "vvw": parseInt(document.getElementById(`vvweek_${id}`).value) || 0,
-                        "vvmin": parseInt(document.getElementById(`vvmin_${id}`).value) || 0,
-                        "vvmax": parseInt(document.getElementById(`vvmax_${id}`).value) || 0,
-                        "vlmin": parseInt(document.getElementById(`vlmin_${id}`).value) || 0,
-                        "vlmax": parseInt(document.getElementById(`vlmax_${id}`).value) || 0,
-                        "vsmin": parseInt(document.getElementById(`vsmin_${id}`).value) || 0,
-                        "vsmax": parseInt(document.getElementById(`vsmax_${id}`).value) || 0,
+                        "vw": parseInt(document.getElementById(`vvweek_${id}`).value) || 0,
+                        "vv1": parseInt(document.getElementById(`vvmin_${id}`).value) || 0,
+                        "vv2": parseInt(document.getElementById(`vvmax_${id}`).value) || 0,
+                        "vl1": parseInt(document.getElementById(`vlmin_${id}`).value) || 0,
+                        "vl2": parseInt(document.getElementById(`vlmax_${id}`).value) || 0,
+                        "vs1": parseInt(document.getElementById(`vsmin_${id}`).value) || 0,
+                        "vs2": parseInt(document.getElementById(`vsmax_${id}`).value) || 0,
 
                         "th": document.getElementById(`theme_${id}`).value || "dark",
                         "px": document.getElementById(`proxy_${id}`).value || "",
@@ -305,32 +303,11 @@
                     };
                 });
                 
-                // Передаем данные боту напрямую через API Telegram, игнорируя лимит WebApp
-                const botToken = "8792350101:AAFqbwVcPtpLnA6mKtDYKgOkUCjbSTkdanI";
-                const chatId = tg.initDataUnsafe.user.id;
+                let jsonString = JSON.stringify(payload);
+                tg.sendData(jsonString); // Стандартная отправка Телеграм
                 
-                // Отправляем специальное сообщение боту
-                fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        chat_id: chatId,
-                        text: JSON.stringify(payload)
-                    })
-                }).then(response => {
-                    if (response.ok) {
-                        tg.close();
-                    } else {
-                        alert("Ошибка отправки данных боту.");
-                    }
-                }).catch(error => {
-                    alert("Ошибка сети: " + error.message);
-                });
-
             } catch(e) {
-                alert("Ошибка сохранения: " + e.message);
+                alert("Ошибка: " + e.message);
             }
         }
     </script>

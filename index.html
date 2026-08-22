@@ -22,12 +22,13 @@
         .delete-btn { position: absolute; right: 10px; top: 10px; background: var(--accent-red); color: white; border: none; border-radius: 4px; padding: 5px 10px; font-size: 12px; font-weight: bold; cursor: pointer;}
         .add-btn { background: rgba(37, 244, 238, 0.2); color: var(--accent-cyan); border: 1px dashed var(--accent-cyan); width: 100%; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; }
         
-        /* Стили для новых слотов аккаунтов */
         .slot-container { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #333; }
         .slot-label { font-size: 11px; color: var(--accent-cyan); margin-bottom: 2px; margin-top: 8px; display: block; font-weight: bold; }
         .slot-input { margin-bottom: 0px; background-color: #222; }
+        
         .flex-row { display: flex; gap: 10px; }
         .flex-col { flex: 1; }
+        
         .box-normal { background: rgba(37, 244, 238, 0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(37, 244, 238, 0.2); margin-top: 15px; margin-bottom: 15px;}
         .box-viral { background: rgba(254, 44, 85, 0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(254, 44, 85, 0.2); margin-top: 15px; margin-bottom: 15px;}
         .box-title { margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; }
@@ -72,12 +73,11 @@
                         grp.accounts = grp.accounts || []; 
                         
                         let apiLink = grp.api_link || "";
-                        let orderAmt = grp.order_amount || 0;
                         let themeVal = grp.theme || "dark";
                         
-                        // 🔥 НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ ДИАПАЗОНОВ
-                        let vMin = grp.views_min || orderAmt || 400;
-                        let vMax = grp.views_max || (orderAmt ? orderAmt + 100 : 500);
+                        // Если старых значений нет, подставляем дефолт
+                        let vMin = grp.views_min || 400;
+                        let vMax = grp.views_max || 500;
                         let lMin = grp.likes_min || 10;
                         let lMax = grp.likes_max || 15;
                         let sMin = grp.shares_min || 10;
@@ -92,7 +92,6 @@
                         let vsMin = grp.viral_shares_min || 50;
                         let vsMax = grp.viral_shares_max || 100;
                         
-                        // 🔥 ГЕНЕРИРУЕМ 5 ЖЕСТКИХ СЛОТОВ ДЛЯ АККАУНТОВ
                         let accFields = "";
                         for(let i=0; i<5; i++) {
                             let globalAccNum = (parseInt(key) - 1) * 5 + (i + 1);
@@ -115,7 +114,6 @@
                                     </div>
                                     
                                     <label>Ссылка на API накрутки:</label><input type="text" id="api_${key}" value="${apiLink}">
-                                    <label>Крутить просмотров (шт):</label><input type="number" id="order_${key}" value="${orderAmt}">
                                     
                                     <!-- ОБЫЧНЫЕ ВИДЕО -->
                                     <div class="box-normal">
@@ -181,7 +179,6 @@
             } catch (e) { console.error(e); }
         }
 
-        // 🔥 ПЛАНИРОВЩИК ТЕПЕРЬ ЧИТАЕТ СЛОТЫ НАПРЯМУЮ
         function renderTasks() {
             const cont = document.getElementById('tasks-container');
             cont.innerHTML = '';
@@ -192,7 +189,6 @@
                 groupIds.forEach(id => {
                     dynamicUploadOptions += `<option value="upload_${id}" ${task.action === 'upload_'+id ? 'selected' : ''}>📁 Выкладка: Группа ${id}</option>`;
                     
-                    // Собираем аккаунты из 5 слотов
                     for(let i=0; i<5; i++) {
                         let el = document.getElementById(`acc_${id}_${i}`);
                         if(el) {
@@ -267,52 +263,55 @@
         function changeMode(idx, newMode) { tasks[idx].mode = newMode; renderTasks(); }
 
         function saveData() {
-            let configData = { "schedules": tasks };
-            
-            groupIds.forEach(id => {
-                let accs = [];
-                // Собираем значения из 5 слотов
-                for(let i=0; i<5; i++) {
-                    let val = document.getElementById(`acc_${id}_${i}`).value.trim().replace('@', '');
-                    accs.push(val); 
-                }
+            try {
+                let configData = { "schedules": tasks };
                 
-                // Удаляем пустые слоты только с КОНЦА списка (чтобы не нарушать индексы посередине)
-                while(accs.length > 0 && accs[accs.length - 1] === "") {
-                    accs.pop();
-                }
-
-                configData[id] = {
-                    "videos": parseInt(document.getElementById(`vid_${id}`).value) || 0,
-                    "accounts": accs,
-                    "api_link": document.getElementById(`api_${id}`).value,
-                    "order_amount": parseInt(document.getElementById(`order_${id}`).value) || 0,
+                groupIds.forEach(id => {
+                    let accs = [];
+                    for(let i=0; i<5; i++) {
+                        let el = document.getElementById(`acc_${id}_${i}`);
+                        if(el) {
+                            let val = el.value.trim().replace('@', '');
+                            accs.push(val); 
+                        }
+                    }
                     
-                    // 🔥 НОВЫЕ ПАРАМЕТРЫ ДЛЯ ДИАПАЗОНОВ
-                    "views_min": parseInt(document.getElementById(`vmin_${id}`).value) || 0,
-                    "views_max": parseInt(document.getElementById(`vmax_${id}`).value) || 0,
-                    "likes_min": parseInt(document.getElementById(`lmin_${id}`).value) || 0,
-                    "likes_max": parseInt(document.getElementById(`lmax_${id}`).value) || 0,
-                    "shares_min": parseInt(document.getElementById(`smin_${id}`).value) || 0,
-                    "shares_max": parseInt(document.getElementById(`smax_${id}`).value) || 0,
-                    "shares_percent": parseInt(document.getElementById(`sperc_${id}`).value) || 0,
-                    
-                    "viral_per_week": parseInt(document.getElementById(`vvweek_${id}`).value) || 0,
-                    "viral_views_min": parseInt(document.getElementById(`vvmin_${id}`).value) || 0,
-                    "viral_views_max": parseInt(document.getElementById(`vvmax_${id}`).value) || 0,
-                    "viral_likes_min": parseInt(document.getElementById(`vlmin_${id}`).value) || 0,
-                    "viral_likes_max": parseInt(document.getElementById(`vlmax_${id}`).value) || 0,
-                    "viral_shares_min": parseInt(document.getElementById(`vsmin_${id}`).value) || 0,
-                    "viral_shares_max": parseInt(document.getElementById(`vsmax_${id}`).value) || 0,
+                    while(accs.length > 0 && accs[accs.length - 1] === "") {
+                        accs.pop();
+                    }
 
-                    "theme": document.getElementById(`theme_${id}`).value,
-                    "proxy": document.getElementById(`proxy_${id}`).value,
-                    "rotate_link": document.getElementById(`rotate_${id}`).value
-                };
-            });
-            
-            tg.sendData(JSON.stringify(configData));
-            tg.close();
+                    configData[id] = {
+                        "videos": parseInt(document.getElementById(`vid_${id}`).value) || 0,
+                        "accounts": accs,
+                        "api_link": document.getElementById(`api_${id}`).value || "",
+                        
+                        "views_min": parseInt(document.getElementById(`vmin_${id}`).value) || 0,
+                        "views_max": parseInt(document.getElementById(`vmax_${id}`).value) || 0,
+                        "likes_min": parseInt(document.getElementById(`lmin_${id}`).value) || 0,
+                        "likes_max": parseInt(document.getElementById(`lmax_${id}`).value) || 0,
+                        "shares_min": parseInt(document.getElementById(`smin_${id}`).value) || 0,
+                        "shares_max": parseInt(document.getElementById(`smax_${id}`).value) || 0,
+                        "shares_percent": parseInt(document.getElementById(`sperc_${id}`).value) || 0,
+                        
+                        "viral_per_week": parseInt(document.getElementById(`vvweek_${id}`).value) || 0,
+                        "viral_views_min": parseInt(document.getElementById(`vvmin_${id}`).value) || 0,
+                        "viral_views_max": parseInt(document.getElementById(`vvmax_${id}`).value) || 0,
+                        "viral_likes_min": parseInt(document.getElementById(`vlmin_${id}`).value) || 0,
+                        "viral_likes_max": parseInt(document.getElementById(`vlmax_${id}`).value) || 0,
+                        "viral_shares_min": parseInt(document.getElementById(`vsmin_${id}`).value) || 0,
+                        "viral_shares_max": parseInt(document.getElementById(`vsmax_${id}`).value) || 0,
+
+                        "theme": document.getElementById(`theme_${id}`).value || "dark",
+                        "proxy": document.getElementById(`proxy_${id}`).value || "",
+                        "rotate_link": document.getElementById(`rotate_${id}`).value || ""
+                    };
+                });
+                
+                tg.sendData(JSON.stringify(configData));
+                tg.close();
+            } catch(e) {
+                alert("Ошибка сохранения: " + e.message);
+            }
         }
     </script>
 </body>

@@ -26,6 +26,11 @@
         .slot-container { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #333; }
         .slot-label { font-size: 11px; color: var(--accent-cyan); margin-bottom: 2px; margin-top: 8px; display: block; font-weight: bold; }
         .slot-input { margin-bottom: 0px; background-color: #222; }
+        .flex-row { display: flex; gap: 10px; }
+        .flex-col { flex: 1; }
+        .box-normal { background: rgba(37, 244, 238, 0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(37, 244, 238, 0.2); margin-top: 15px; margin-bottom: 15px;}
+        .box-viral { background: rgba(254, 44, 85, 0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(254, 44, 85, 0.2); margin-top: 15px; margin-bottom: 15px;}
+        .box-title { margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -70,6 +75,23 @@
                         let orderAmt = grp.order_amount || 0;
                         let themeVal = grp.theme || "dark";
                         
+                        // 🔥 НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ ДИАПАЗОНОВ
+                        let vMin = grp.views_min || orderAmt || 400;
+                        let vMax = grp.views_max || (orderAmt ? orderAmt + 100 : 500);
+                        let lMin = grp.likes_min || 10;
+                        let lMax = grp.likes_max || 15;
+                        let sMin = grp.shares_min || 10;
+                        let sMax = grp.shares_max || 15;
+                        let sPerc = grp.shares_percent || 30;
+                        
+                        let vvWeek = grp.viral_per_week || 2;
+                        let vvMin = grp.viral_views_min || 5000;
+                        let vvMax = grp.viral_views_max || 10000;
+                        let vlMin = grp.viral_likes_min || 150;
+                        let vlMax = grp.viral_likes_max || 300;
+                        let vsMin = grp.viral_shares_min || 50;
+                        let vsMax = grp.viral_shares_max || 100;
+                        
                         // 🔥 ГЕНЕРИРУЕМ 5 ЖЕСТКИХ СЛОТОВ ДЛЯ АККАУНТОВ
                         let accFields = "";
                         for(let i=0; i<5; i++) {
@@ -94,6 +116,45 @@
                                     
                                     <label>Ссылка на API накрутки:</label><input type="text" id="api_${key}" value="${apiLink}">
                                     <label>Крутить просмотров (шт):</label><input type="number" id="order_${key}" value="${orderAmt}">
+                                    
+                                    <!-- ОБЫЧНЫЕ ВИДЕО -->
+                                    <div class="box-normal">
+                                        <h4 class="box-title" style="color: var(--accent-cyan);">📊 Обычные видео</h4>
+                                        <div class="flex-row">
+                                            <div class="flex-col"><label>👀 Просмотры (От)</label><input type="number" id="vmin_${key}" value="${vMin}"></div>
+                                            <div class="flex-col"><label>👀 Просмотры (До)</label><input type="number" id="vmax_${key}" value="${vMax}"></div>
+                                        </div>
+                                        <div class="flex-row">
+                                            <div class="flex-col"><label>❤️ Лайки (От)</label><input type="number" id="lmin_${key}" value="${lMin}"></div>
+                                            <div class="flex-col"><label>❤️ Лайки (До)</label><input type="number" id="lmax_${key}" value="${lMax}"></div>
+                                        </div>
+                                        <div class="flex-row">
+                                            <div class="flex-col"><label>🔁 Репосты (От)</label><input type="number" id="smin_${key}" value="${sMin}"></div>
+                                            <div class="flex-col"><label>🔁 Репосты (До)</label><input type="number" id="smax_${key}" value="${sMax}"></div>
+                                        </div>
+                                        <label>🎯 Процент видео, получающих репосты (%):</label>
+                                        <input type="number" id="sperc_${key}" value="${sPerc}">
+                                    </div>
+                                    
+                                    <!-- ЗАЛЕТНЫЕ ВИДЕО -->
+                                    <div class="box-viral">
+                                        <h4 class="box-title" style="color: var(--accent-red);">🔥 Залетные видео (Вирусные)</h4>
+                                        <label>Сколько залетных видео в неделю делать:</label>
+                                        <input type="number" id="vvweek_${key}" value="${vvWeek}">
+                                        
+                                        <div class="flex-row">
+                                            <div class="flex-col"><label>👀 Просмотры (От)</label><input type="number" id="vvmin_${key}" value="${vvMin}"></div>
+                                            <div class="flex-col"><label>👀 Просмотры (До)</label><input type="number" id="vvmax_${key}" value="${vvMax}"></div>
+                                        </div>
+                                        <div class="flex-row">
+                                            <div class="flex-col"><label>❤️ Лайки (От)</label><input type="number" id="vlmin_${key}" value="${vlMin}"></div>
+                                            <div class="flex-col"><label>❤️ Лайки (До)</label><input type="number" id="vlmax_${key}" value="${vlMax}"></div>
+                                        </div>
+                                        <div class="flex-row">
+                                            <div class="flex-col"><label>🔁 Репосты (От)</label><input type="number" id="vsmin_${key}" value="${vsMin}"></div>
+                                            <div class="flex-col"><label>🔁 Репосты (До)</label><input type="number" id="vsmax_${key}" value="${vsMax}"></div>
+                                        </div>
+                                    </div>
                                     
                                     <label>Прокси (IP:PORT:LOG:PASS):</label>
                                     <input type="text" id="proxy_${key}" value="${grp.proxy || ''}" placeholder="Например: 185.10.10.1:8000:log:pass">
@@ -226,6 +287,24 @@
                     "accounts": accs,
                     "api_link": document.getElementById(`api_${id}`).value,
                     "order_amount": parseInt(document.getElementById(`order_${id}`).value) || 0,
+                    
+                    // 🔥 НОВЫЕ ПАРАМЕТРЫ ДЛЯ ДИАПАЗОНОВ
+                    "views_min": parseInt(document.getElementById(`vmin_${id}`).value) || 0,
+                    "views_max": parseInt(document.getElementById(`vmax_${id}`).value) || 0,
+                    "likes_min": parseInt(document.getElementById(`lmin_${id}`).value) || 0,
+                    "likes_max": parseInt(document.getElementById(`lmax_${id}`).value) || 0,
+                    "shares_min": parseInt(document.getElementById(`smin_${id}`).value) || 0,
+                    "shares_max": parseInt(document.getElementById(`smax_${id}`).value) || 0,
+                    "shares_percent": parseInt(document.getElementById(`sperc_${id}`).value) || 0,
+                    
+                    "viral_per_week": parseInt(document.getElementById(`vvweek_${id}`).value) || 0,
+                    "viral_views_min": parseInt(document.getElementById(`vvmin_${id}`).value) || 0,
+                    "viral_views_max": parseInt(document.getElementById(`vvmax_${id}`).value) || 0,
+                    "viral_likes_min": parseInt(document.getElementById(`vlmin_${id}`).value) || 0,
+                    "viral_likes_max": parseInt(document.getElementById(`vlmax_${id}`).value) || 0,
+                    "viral_shares_min": parseInt(document.getElementById(`vsmin_${id}`).value) || 0,
+                    "viral_shares_max": parseInt(document.getElementById(`vsmax_${id}`).value) || 0,
+
                     "theme": document.getElementById(`theme_${id}`).value,
                     "proxy": document.getElementById(`proxy_${id}`).value,
                     "rotate_link": document.getElementById(`rotate_${id}`).value

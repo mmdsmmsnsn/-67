@@ -1,315 +1,685 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikTok Farm Dashboard</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        :root { --bg-color: #0f0f0f; --card-bg: #1e1e1e; --text-color: #ffffff; --text-muted: #888888; --accent-cyan: #25F4EE; --accent-red: #FE2C55; --border-radius: 12px; }
-        body { font-family: -apple-system, sans-serif; background-color: var(--bg-color); color: var(--text-color); padding: 15px; margin: 0; padding-bottom: 90px; }
-        h2 { text-align: center; font-size: 24px; margin-bottom: 20px; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-red)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .group-card { background-color: var(--card-bg); border-radius: var(--border-radius); margin-bottom: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border-left: 4px solid var(--accent-cyan); transition: all 0.3s ease; }
-        .group-header { padding: 15px; font-size: 18px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background-color: rgba(255,255,255,0.02); }
-        .group-header::after { content: '▼'; font-size: 14px; color: var(--accent-cyan); transition: transform 0.3s; }
-        .group-card.active .group-header::after { transform: rotate(-180deg); }
-        .group-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; padding: 0 15px; }
-        .group-card.active .group-content { max-height: 1200px; padding: 10px 15px 20px 15px; overflow-y: auto; }
-        label { display: block; font-size: 13px; color: var(--text-muted); margin-top: 12px; margin-bottom: 5px; text-transform: uppercase; }
-        input, textarea, select { width: 100%; padding: 12px; background-color: #2a2a2a; border: 1px solid #333; border-radius: 8px; color: var(--text-color); font-size: 15px; box-sizing: border-box; outline: none; margin-bottom: 5px; }
-        .my-save-btn { position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--accent-cyan); color: #000; padding: 20px; font-size: 16px; font-weight: bold; text-align: center; border: none; cursor: pointer; z-index: 9999; text-transform: uppercase; }
-        .task-row { background: #2a2a2a; padding: 10px; border-radius: 8px; margin-bottom: 10px; position: relative; }
-        .delete-btn { position: absolute; right: 10px; top: 10px; background: var(--accent-red); color: white; border: none; border-radius: 4px; padding: 5px 10px; font-size: 12px; font-weight: bold; cursor: pointer;}
-        .add-btn { background: rgba(37, 244, 238, 0.2); color: var(--accent-cyan); border: 1px dashed var(--accent-cyan); width: 100%; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        
-        .slot-container { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #333; }
-        .slot-label { font-size: 11px; color: var(--accent-cyan); margin-bottom: 2px; margin-top: 8px; display: block; font-weight: bold; }
-        .slot-input { margin-bottom: 0px; background-color: #222; }
-        
-        .flex-row { display: flex; gap: 10px; }
-        .flex-col { flex: 1; }
-        
-        .box-normal { background: rgba(37, 244, 238, 0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(37, 244, 238, 0.2); margin-top: 15px; margin-bottom: 15px;}
-        .box-viral { background: rgba(254, 44, 85, 0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(254, 44, 85, 0.2); margin-top: 15px; margin-bottom: 15px;}
-        .box-title { margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TikTok Farm Panel</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root {
+  --bg: #0a0a0a;
+  --card: #161616;
+  --card2: #1e1e1e;
+  --input: #252525;
+  --text: #f2f2f2;
+  --muted: #8a8a8a;
+  --cyan: #25F4EE;
+  --red: #FE2C55;
+  --border: #2c2c2c;
+  --ok: #3dd68c;
+  --radius: 12px;
+  --bottom-h: 72px;
+  --tab-h: 52px;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+body { padding-bottom: calc(var(--bottom-h) + 12px); min-height: 100vh; }
+
+.app-header {
+  position: sticky; top: 0; z-index: 50; background: rgba(10,10,10,.92);
+  backdrop-filter: blur(10px); border-bottom: 1px solid var(--border);
+  padding: 10px 14px 0;
+}
+.app-title {
+  margin: 0 0 10px; font-size: 18px; font-weight: 700; text-align: center;
+  background: linear-gradient(90deg, var(--cyan), var(--red));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.tabs { display: flex; gap: 6px; }
+.tab {
+  flex: 1; text-align: center; padding: 10px 6px; border-radius: 10px 10px 0 0;
+  background: transparent; color: var(--muted); border: none; font-size: 14px;
+  font-weight: 600; cursor: pointer;
+}
+.tab.active { color: #000; background: var(--cyan); }
+
+.panel { display: none; padding: 12px 12px 0; }
+.panel.active { display: block; }
+
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.chip {
+  border: 1px solid var(--border); background: var(--card); color: var(--muted);
+  border-radius: 999px; padding: 7px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.chip.active { border-color: var(--cyan); color: var(--cyan); background: rgba(37,244,238,.08); }
+
+.gcard {
+  background: var(--card); border-radius: var(--radius); margin-bottom: 10px;
+  border-left: 3px solid var(--cyan); overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0,0,0,.35);
+}
+.gcard.smart { border-left-color: var(--red); }
+.ghead {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 12px 14px; cursor: pointer; background: rgba(255,255,255,.02);
+}
+.ghead-left { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ghead-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.ghead-meta { font-size: 11px; color: var(--muted); }
+.badge {
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
+  padding: 2px 6px; border-radius: 6px; background: rgba(254,44,85,.18); color: var(--red);
+}
+.chev { color: var(--cyan); transition: transform .25s; font-size: 12px; }
+.gcard.open .chev { transform: rotate(-180deg); }
+.gbody { display: none; padding: 0 12px 14px; }
+.gcard.open .gbody { display: block; }
+
+.acc {
+  border: 1px solid var(--border); border-radius: 10px; margin-top: 8px; overflow: hidden;
+  background: var(--card2);
+}
+.acc-h {
+  padding: 10px 12px; font-size: 13px; font-weight: 700; cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center; color: var(--text);
+}
+.acc-h span.hint { color: var(--muted); font-weight: 500; font-size: 11px; }
+.acc-b { display: none; padding: 0 12px 12px; }
+.acc.open .acc-b { display: block; }
+
+label { display: block; font-size: 11px; color: var(--muted); margin: 10px 0 4px; text-transform: uppercase; letter-spacing: .03em; }
+input, textarea, select {
+  width: 100%; padding: 11px 12px; background: var(--input); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-size: 15px; outline: none;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--cyan); }
+.row { display: flex; gap: 8px; }
+.col { flex: 1; min-width: 0; }
+.slot-box { background: rgba(0,0,0,.25); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; margin-top: 6px; }
+.slot-lab { display: block; font-size: 10px; color: var(--cyan); font-weight: 700; margin: 6px 0 2px; }
+.note {
+  font-size: 12px; color: var(--muted); background: rgba(254,44,85,.07);
+  border: 1px solid rgba(254,44,85,.25); border-radius: 8px; padding: 8px 10px; margin: 8px 0;
+  line-height: 1.4;
+}
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 12px; background: rgba(37,244,238,.06); border: 1px solid rgba(37,244,238,.2);
+  border-radius: 8px; margin-top: 10px;
+}
+.toggle-row .tlab { font-size: 13px; font-weight: 600; }
+.switch { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute; inset: 0; background: #333; border-radius: 999px; cursor: pointer; transition: .2s;
+}
+.slider:before {
+  content: ""; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px;
+  background: #fff; border-radius: 50%; transition: .2s;
+}
+.switch input:checked + .slider { background: var(--cyan); }
+.switch input:checked + .slider:before { transform: translateX(20px); }
+
+.api-wrap { display: flex; gap: 6px; align-items: stretch; }
+.api-wrap input { flex: 1; }
+.api-btn {
+  border: 1px solid var(--border); background: var(--card); color: var(--cyan);
+  border-radius: 8px; padding: 0 10px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+
+.task {
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px; margin-bottom: 10px; position: relative;
+}
+.del {
+  position: absolute; right: 10px; top: 10px; background: var(--red); color: #fff;
+  border: none; border-radius: 6px; padding: 5px 9px; font-size: 11px; font-weight: 700; cursor: pointer;
+}
+.add-btn {
+  width: 100%; padding: 12px; border-radius: 10px; border: 1px dashed var(--cyan);
+  background: rgba(37,244,238,.08); color: var(--cyan); font-weight: 700; cursor: pointer; margin-top: 4px;
+}
+
+.savebar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 100;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(180deg, transparent, rgba(10,10,10,.95) 30%);
+}
+.save-btn {
+  width: 100%; border: none; border-radius: 12px; padding: 15px;
+  background: var(--cyan); color: #000; font-size: 15px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .04em; cursor: pointer;
+  box-shadow: 0 6px 20px rgba(37,244,238,.25);
+}
+.save-btn:active { transform: scale(.98); }
+
+.empty {
+  text-align: center; padding: 48px 20px; color: var(--muted);
+}
+.empty h3 { color: var(--text); margin: 0 0 8px; }
+.empty p { margin: 0; font-size: 13px; line-height: 1.5; }
+
+.info-card {
+  background: var(--card); border-radius: var(--radius); padding: 14px; margin-bottom: 10px;
+  border: 1px solid var(--border); line-height: 1.5; font-size: 13px; color: #cfcfcf;
+}
+.info-card h3 { margin: 0 0 8px; font-size: 15px; color: var(--cyan); }
+.info-card code { background: #222; padding: 1px 5px; border-radius: 4px; font-size: 12px; color: var(--cyan); }
+.toast {
+  position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+  background: #1a1a1a; border: 1px solid var(--cyan); color: var(--text);
+  padding: 10px 14px; border-radius: 10px; z-index: 200; display: none; font-size: 13px;
+}
+.hidden { display: none !important; }
+</style>
 </head>
 <body>
+<div class="toast" id="toast"></div>
+<div class="app-header">
+  <h1 class="app-title">Управління мережею</h1>
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-tab="groups" type="button">Групи</button>
+    <button class="tab" data-tab="timers" type="button">Таймери</button>
+    <button class="tab" data-tab="info" type="button">Інфо</button>
+  </div>
+</div>
 
-    <h2>Управление Сетью</h2>
-    <div id="form-container"></div>
-    
-    <div class="group-card" id="card_scheduler" style="border-left-color: var(--accent-red);">
-        <div class="group-header" onclick="toggleCard('scheduler')">⏰ ПЛАНИРОВЩИК ЗАДАЧ</div>
-        <div class="group-content" id="scheduler-content">
-            <div id="tasks-container"></div>
-            <button class="add-btn" onclick="addTask()">➕ ДОБАВИТЬ ТАЙМЕР</button>
-        </div>
+<div id="empty" class="empty hidden">
+  <h3>Немає даних</h3>
+  <p>Відкрий панель з Telegram-кнопки бота<br>(з <code>?data=</code>). Прямий захід на URL без параметра — порожній стан.</p>
+</div>
+
+<div id="main-ui" class="hidden">
+  <div class="panel active" id="panel-groups">
+    <div class="chips" id="chips">
+      <button class="chip active" type="button" data-f="all">Усі</button>
+      <button class="chip" type="button" data-f="1-5">1–5</button>
+      <button class="chip" type="button" data-f="6-10">6–10</button>
+      <button class="chip" type="button" data-f="other">інші</button>
     </div>
+    <div id="groups-root"></div>
+  </div>
 
-    <button class="my-save-btn" onclick="saveData()">СОХРАНИТЬ КОНФИГУРАЦИЮ</button>
+  <div class="panel" id="panel-timers">
+    <div id="tasks-root"></div>
+    <button class="add-btn" type="button" onclick="addTask()">➕ Додати таймер</button>
+  </div>
 
-    <script>
-        let tg = window.Telegram.WebApp;
-        tg.ready(); tg.expand(); 
+  <div class="panel" id="panel-info">
+    <div class="info-card">
+      <h3>💾 Як зберегти</h3>
+      Натисни <b>ЗБЕРЕГТИ</b> внизу (або Telegram MainButton). Бот отримає стиснутий payload через <code>tg.sendData</code> і змерджить групи + таймери.
+    </div>
+    <div class="info-card">
+      <h3>📦 Stock / Monthly плани</h3>
+      Плани boost/monthly живуть у кнопках Telegram-меню бота — у WebApp їх немає через ліміт розміру URL (<code>?data=</code>).
+    </div>
+    <div class="info-card">
+      <h3>🚀 Redeploy на Vercel</h3>
+      У проєкті Vercel заміни кореневий <code>index.html</code> вмістом з <code>vercel_panel/index.html</code> або <code>версель.txt</code>. URL бота (<code>WEB_APP_URL</code>) не чіпай.
+    </div>
+    <div class="info-card">
+      <h3>🧠 Smart boost</h3>
+      Для груп 2–5 (і де увімкнено <b>smart_boost</b>) вірусні + % репостів — legacy; накрутка йде з monthly plan. Поле <b>Тижневі перегляди (wv)</b> — опційне.
+    </div>
+    <div class="info-card">
+      <h3>⏱ Дія «Автодень»</h3>
+      У таймерах є <b>🚀 Автодень</b> (<code>pipeline</code>) — запускає <code>daily_pipeline.py</code>.
+    </div>
+  </div>
+</div>
 
-        let tasks = [];
-        let groupIds = [];
+<div class="savebar hidden" id="savebar">
+  <button class="save-btn" type="button" onclick="saveData()">💾 Зберегти конфіг</button>
+</div>
 
-        function toggleCard(id) { document.getElementById(`card_${id}`).classList.toggle('active'); }
+<script>
+(function () {
+  const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+  if (tg) {
+    try {
+      tg.ready();
+      tg.expand();
+      const tp = tg.themeParams || {};
+      if (tp.bg_color) document.documentElement.style.setProperty('--bg', tp.bg_color);
+      if (tp.secondary_bg_color) document.documentElement.style.setProperty('--card', tp.secondary_bg_color);
+      if (tp.text_color) document.documentElement.style.setProperty('--text', tp.text_color);
+      if (tp.hint_color) document.documentElement.style.setProperty('--muted', tp.hint_color);
+      if (tp.button_color) document.documentElement.style.setProperty('--cyan', tp.button_color);
+      if (tg.MainButton) {
+        tg.MainButton.setText('💾 ЗБЕРЕГТИ');
+        tg.MainButton.show();
+        tg.MainButton.onClick(saveData);
+      }
+    } catch (e) {}
+  }
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const dataParam = urlParams.get('data');
-        const container = document.getElementById("form-container");
-        
-        if (dataParam) {
-            try {
-                const config = JSON.parse(decodeURIComponent(dataParam));
-                
-                for (let key in config) {
-                    if (key !== "schedules" && !isNaN(key)) {
-                        groupIds.push(key);
-                        let grp = config[key];
-                        grp.accounts = grp.accounts || []; 
-                        
-                        let apiLink = grp.api_link || "";
-                        let themeVal = grp.theme || "dark";
-                        
-                        let vMin = grp.views_min || 400;
-                        let vMax = grp.views_max || 500;
-                        let lMin = grp.likes_min || 10;
-                        let lMax = grp.likes_max || 15;
-                        let sMin = grp.shares_min || 10;
-                        let sMax = grp.shares_max || 15;
-                        let sPerc = grp.shares_percent || 30;
-                        
-                        let vvWeek = grp.viral_per_week || 2;
-                        let vvMin = grp.viral_views_min || 5000;
-                        let vvMax = grp.viral_views_max || 10000;
-                        let vlMin = grp.viral_likes_min || 150;
-                        let vlMax = grp.viral_likes_max || 300;
-                        let vsMin = grp.viral_shares_min || 50;
-                        let vsMax = grp.viral_shares_max || 100;
-                        
-                        let accFields = "";
-                        for(let i=0; i<5; i++) {
-                            let globalAccNum = (parseInt(key) - 1) * 5 + (i + 1);
-                            let accValue = grp.accounts[i] || '';
-                            accFields += `
-                                <span class="slot-label">Слот ${i+1} ➔ Папка: account_${globalAccNum}</span>
-                                <input type="text" id="acc_${key}_${i}" class="slot-input" value="${accValue}" placeholder="@username" oninput="renderTasks()">
-                            `;
-                        }
-                        
-                        container.innerHTML += `
-                            <div class="group-card" id="card_${key}">
-                                <div class="group-header" onclick="toggleCard('${key}')">📁 Группа ${key}</div>
-                                <div class="group-content">
-                                    <label>Видео на акк:</label><input type="number" id="vid_${key}" value="${grp.videos || 0}">
-                                    
-                                    <label style="color: var(--accent-red);">Привязка аккаунтов к папкам:</label>
-                                    <div class="slot-container">
-                                        ${accFields}
-                                    </div>
-                                    
-                                    <label>Ссылка на API накрутки:</label><input type="text" id="api_${key}" value="${apiLink}">
-                                    
-                                    <div class="box-normal">
-                                        <h4 class="box-title" style="color: var(--accent-cyan);">📊 Обычные видео</h4>
-                                        <div class="flex-row">
-                                            <div class="flex-col"><label>👀 Просмотры (От)</label><input type="number" id="vmin_${key}" value="${vMin}"></div>
-                                            <div class="flex-col"><label>👀 Просмотры (До)</label><input type="number" id="vmax_${key}" value="${vMax}"></div>
-                                        </div>
-                                        <div class="flex-row">
-                                            <div class="flex-col"><label>❤️ Лайки (От)</label><input type="number" id="lmin_${key}" value="${lMin}"></div>
-                                            <div class="flex-col"><label>❤️ Лайки (До)</label><input type="number" id="lmax_${key}" value="${lMax}"></div>
-                                        </div>
-                                        <div class="flex-row">
-                                            <div class="flex-col"><label>🔁 Репосты (От)</label><input type="number" id="smin_${key}" value="${sMin}"></div>
-                                            <div class="flex-col"><label>🔁 Репосты (До)</label><input type="number" id="smax_${key}" value="${sMax}"></div>
-                                        </div>
-                                        <label>🎯 Процент видео, получающих репосты (%):</label>
-                                        <input type="number" id="sperc_${key}" value="${sPerc}">
-                                    </div>
-                                    
-                                    <div class="box-viral">
-                                        <h4 class="box-title" style="color: var(--accent-red);">🔥 Залетные видео (Вирусные)</h4>
-                                        <label>Сколько залетных видео в неделю делать:</label>
-                                        <input type="number" id="vvweek_${key}" value="${vvWeek}">
-                                        
-                                        <div class="flex-row">
-                                            <div class="flex-col"><label>👀 Просмотры (От)</label><input type="number" id="vvmin_${key}" value="${vvMin}"></div>
-                                            <div class="flex-col"><label>👀 Просмотры (До)</label><input type="number" id="vvmax_${key}" value="${vvMax}"></div>
-                                        </div>
-                                        <div class="flex-row">
-                                            <div class="flex-col"><label>❤️ Лайки (От)</label><input type="number" id="vlmin_${key}" value="${vlMin}"></div>
-                                            <div class="flex-col"><label>❤️ Лайки (До)</label><input type="number" id="vlmax_${key}" value="${vlMax}"></div>
-                                        </div>
-                                        <div class="flex-row">
-                                            <div class="flex-col"><label>🔁 Репосты (От)</label><input type="number" id="vsmin_${key}" value="${vsMin}"></div>
-                                            <div class="flex-col"><label>🔁 Репосты (До)</label><input type="number" id="vsmax_${key}" value="${vsMax}"></div>
-                                        </div>
-                                    </div>
-                                    
-                                    <label>Прокси (IP:PORT:LOG:PASS):</label>
-                                    <input type="text" id="proxy_${key}" value="${grp.proxy || ''}" placeholder="Например: 185.10.10.1:8000:log:pass">
-                                    
-                                    <label>Ссылка для смены IP (Ротация):</label>
-                                    <input type="text" id="rotate_${key}" value="${grp.rotate_link || ''}" placeholder="https://api.proxy-provider.com/change-ip...">
-                                    
-                                    <label>Тема скриншотов:</label>
-                                    <select id="theme_${key}">
-                                        <option value="dark" ${themeVal === 'dark' ? 'selected' : ''}>🌑 Темная</option>
-                                        <option value="light" ${themeVal === 'light' ? 'selected' : ''}>🌕 Светлая</option>
-                                    </select>
-                                </div>
-                            </div>`;
-                    }
-                }
-                
-                if(groupIds.length > 0) {
-                    document.getElementById(`card_${groupIds[0]}`).classList.add('active');
-                }
-                
-                if (config.schedules) { tasks = config.schedules; }
-                renderTasks();
-            } catch (e) { console.error(e); }
-        }
+  let tasks = [];
+  let groupIds = [];
+  let filter = 'all';
+  const apiFull = {}; // id -> full api_link
+  const apiMasked = {}; // id -> bool show masked
 
-        function renderTasks() {
-            const cont = document.getElementById('tasks-container');
-            cont.innerHTML = '';
-            tasks.forEach((task, index) => {
-                let dynamicUploadOptions = "";
-                let dynamicAccountUploads = "";
-                
-                groupIds.forEach(id => {
-                    dynamicUploadOptions += `<option value="upload_${id}" ${task.action === 'upload_'+id ? 'selected' : ''}>📁 Выкладка: Группа ${id}</option>`;
-                    
-                    for(let i=0; i<5; i++) {
-                        let el = document.getElementById(`acc_${id}_${i}`);
-                        if(el) {
-                            let acc = el.value.trim().replace('@', '');
-                            if(acc) {
-                                let username = '@' + acc;
-                                let val = `up1_${id}_${username}`;
-                                dynamicAccountUploads += `<option value="${val}" ${task.action === val ? 'selected' : ''}>👤 Выкладка: ${username} (Гр ${id})</option>`;
-                            }
-                        }
-                    }
-                });
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 2200);
+  }
 
-                cont.innerHTML += `
-                    <div class="task-row" id="task_${index}">
-                        <button class="delete-btn" onclick="deleteTask(${index})">УДАЛИТЬ</button>
-                        <label>Что сделать:</label>
-                        <select id="action_${index}" onchange="updateTask(${index}, 'action', this.value)">
-                            <optgroup label="Массовые действия">
-                                <option value="upload_all" ${task.action === 'upload_all' ? 'selected' : ''}>🧨 Запустить ВСЕ выкладки</option>
-                                <option value="links" ${task.action === 'links' ? 'selected' : ''}>🔗 Собрать все ссылки</option>
-                                <option value="order" ${task.action === 'order' ? 'selected' : ''}>🛒 Запустить всю накрутку</option>
-                            </optgroup>
-                            <optgroup label="Отдельные группы">
-                                ${dynamicUploadOptions}
-                            </optgroup>
-                            <optgroup label="Отдельные аккаунты">
-                                ${dynamicAccountUploads}
-                            </optgroup>
-                            <optgroup label="Дополнительно">
-                                <option value="screens_all" ${task.action === 'screens_all' ? 'selected' : ''}>📸 Сделать все скриншоты</option>
-                                <option value="stats" ${task.action === 'stats' ? 'selected' : ''}>📈 Собрать статистику</option>
-                                <option value="sheets" ${task.action === 'sheets' ? 'selected' : ''}>📊 Обновить Google Таблицу</option>
-                                <option value="sorter" ${task.action === 'sorter' ? 'selected' : ''}>🔄 Сортировка видео</option>
-                            </optgroup>
-                        </select>
-                        <label>Частота:</label>
-                        <select id="mode_${index}" onchange="changeMode(${index}, this.value)">
-                            <option value="daily" ${task.mode === 'daily' ? 'selected' : ''}>🔁 Каждый день</option>
-                            <option value="weekly" ${task.mode === 'weekly' ? 'selected' : ''}>📅 Раз в неделю</option>
-                            <option value="once" ${task.mode === 'once' ? 'selected' : ''}>🎯 Единоразово</option>
-                        </select>
-                        
-                        ${task.mode === 'weekly' ? `
-                            <select id="day_${index}" onchange="updateTask(${index}, 'day', this.value)">
-                                <option value="mon" ${task.day === 'mon' ? 'selected' : ''}>Понедельник</option>
-                                <option value="tue" ${task.day === 'tue' ? 'selected' : ''}>Вторник</option>
-                                <option value="wed" ${task.day === 'wed' ? 'selected' : ''}>Среда</option>
-                                <option value="thu" ${task.day === 'thu' ? 'selected' : ''}>Четверг</option>
-                                <option value="fri" ${task.day === 'fri' ? 'selected' : ''}>Пятница</option>
-                                <option value="sat" ${task.day === 'sat' ? 'selected' : ''}>Суббота</option>
-                                <option value="sun" ${task.day === 'sun' ? 'selected' : ''}>Воскресенье</option>
-                            </select>
-                        ` : ''}
-                        
-                        ${task.mode === 'once' ? `
-                            <input type="date" id="date_${index}" value="${task.date || ''}" onchange="updateTask(${index}, 'date', this.value)">
-                        ` : ''}
-                        
-                        <label>Время:</label>
-                        <input type="time" id="time_${index}" value="${task.time || '12:00'}" onchange="updateTask(${index}, 'time', this.value)">
-                    </div>`;
-            });
-        }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
 
-        function addTask() {
-            tasks.push({ action: 'upload_all', mode: 'daily', time: '12:00', day: 'mon', date: '' });
-            renderTasks();
-        }
-        function deleteTask(idx) { tasks.splice(idx, 1); renderTasks(); }
-        function updateTask(idx, key, val) { tasks[idx][key] = val; }
-        function changeMode(idx, newMode) { tasks[idx].mode = newMode; renderTasks(); }
+  function maskApi(full) {
+    const s = String(full || '');
+    if (s.length <= 6) return s ? ('•'.repeat(Math.max(0, s.length - 2)) + s.slice(-2)) : '';
+    return '••••••' + s.slice(-6);
+  }
 
-        // 🔥 СУПЕР СЖАТИЕ ДАННЫХ ДЛЯ ОБХОДА ЛИМИТОВ TELEGRAM 🔥
-        function saveData() {
-            try {
-                let payload = { "s": tasks, "g": {} };
-                
-                groupIds.forEach(id => {
-                    let accs = [];
-                    for(let i=0; i<5; i++) {
-                        let el = document.getElementById(`acc_${id}_${i}`);
-                        if(el) {
-                            let val = el.value.trim().replace('@', '');
-                            accs.push(val); 
-                        }
-                    }
-                    while(accs.length > 0 && accs[accs.length - 1] === "") { accs.pop(); }
+  function num(v, d) {
+    const n = parseInt(v, 10);
+    return Number.isFinite(n) ? n : d;
+  }
 
-                    // Пакуем ВСЕ ключи в минимальный размер
-                    payload.g[id] = {
-                        "v": parseInt(document.getElementById(`vid_${id}`).value) || 0,
-                        "a": accs,
-                        "al": document.getElementById(`api_${id}`).value || "",
-                        
-                        "v1": parseInt(document.getElementById(`vmin_${id}`).value) || 0,
-                        "v2": parseInt(document.getElementById(`vmax_${id}`).value) || 0,
-                        "l1": parseInt(document.getElementById(`lmin_${id}`).value) || 0,
-                        "l2": parseInt(document.getElementById(`lmax_${id}`).value) || 0,
-                        "s1": parseInt(document.getElementById(`smin_${id}`).value) || 0,
-                        "s2": parseInt(document.getElementById(`smax_${id}`).value) || 0,
-                        "sp": parseInt(document.getElementById(`sperc_${id}`).value) || 0,
-                        
-                        "vw": parseInt(document.getElementById(`vvweek_${id}`).value) || 0,
-                        "vv1": parseInt(document.getElementById(`vvmin_${id}`).value) || 0,
-                        "vv2": parseInt(document.getElementById(`vvmax_${id}`).value) || 0,
-                        "vl1": parseInt(document.getElementById(`vlmin_${id}`).value) || 0,
-                        "vl2": parseInt(document.getElementById(`vlmax_${id}`).value) || 0,
-                        "vs1": parseInt(document.getElementById(`vsmin_${id}`).value) || 0,
-                        "vs2": parseInt(document.getElementById(`vsmax_${id}`).value) || 0,
+  function isSmartGroup(id) {
+    const n = parseInt(id, 10);
+    return n >= 2 && n <= 5;
+  }
 
-                        "th": document.getElementById(`theme_${id}`).value || "dark",
-                        "px": document.getElementById(`proxy_${id}`).value || "",
-                        "rl": document.getElementById(`rotate_${id}`).value || ""
-                    };
-                });
-                
-                let jsonString = JSON.stringify(payload);
-                tg.sendData(jsonString); // Стандартная отправка Телеграм
-                
-            } catch(e) {
-                alert("Ошибка: " + e.message);
+  function passFilter(id) {
+    const n = parseInt(id, 10);
+    if (filter === 'all') return true;
+    if (filter === '1-5') return n >= 1 && n <= 5;
+    if (filter === '6-10') return n >= 6 && n <= 10;
+    return !(n >= 1 && n <= 10);
+  }
+
+  function countActiveAcc(id) {
+    let c = 0;
+    for (let i = 0; i < 5; i++) {
+      const el = document.getElementById('acc_' + id + '_' + i);
+      if (el && el.value.trim()) c++;
+    }
+    return c;
+  }
+
+  function syncHeaderMeta(id) {
+    const meta = document.getElementById('meta_' + id);
+    const vid = document.getElementById('vid_' + id);
+    if (!meta) return;
+    const acc = countActiveAcc(id);
+    const v = vid ? (parseInt(vid.value, 10) || 0) : 0;
+    meta.textContent = acc + ' акк · ' + v + ' vid/день';
+  }
+
+  // Tabs
+  document.getElementById('tabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('.tab');
+    if (!btn) return;
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === btn));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  });
+
+  document.getElementById('chips').addEventListener('click', (e) => {
+    const btn = e.target.closest('.chip');
+    if (!btn) return;
+    filter = btn.dataset.f;
+    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c === btn));
+    document.querySelectorAll('.gcard').forEach(card => {
+      card.classList.toggle('hidden', !passFilter(card.dataset.gid));
+    });
+  });
+
+  window.toggleGroup = function (id) {
+    document.getElementById('card_' + id).classList.toggle('open');
+  };
+  window.toggleAcc = function (el) {
+    el.closest('.acc').classList.toggle('open');
+  };
+  window.toggleApiMask = function (id) {
+    apiMasked[id] = !apiMasked[id];
+    const input = document.getElementById('api_' + id);
+    const btn = document.getElementById('api_btn_' + id);
+    if (!input) return;
+    if (apiMasked[id]) {
+      // leaving edit -> save current as full if looks unmasked
+      if (!input.value.startsWith('••••')) apiFull[id] = input.value;
+      input.value = maskApi(apiFull[id] || '');
+      input.readOnly = true;
+      btn.textContent = 'показати';
+    } else {
+      input.value = apiFull[id] || '';
+      input.readOnly = false;
+      btn.textContent = 'сховати';
+      input.focus();
+    }
+  };
+  window.onApiInput = function (id, el) {
+    if (!apiMasked[id]) apiFull[id] = el.value;
+  };
+  window.onVidOrAcc = function (id) { syncHeaderMeta(id); renderTasks(); };
+
+  function buildGroupCard(id, grp) {
+    const smartDefault = isSmartGroup(id) ? true : !!grp.smart_boost;
+    const smart = ('smart_boost' in grp) ? !!grp.smart_boost : smartDefault;
+    const videos = num(grp.videos, 0);
+    const accounts = grp.accounts || [];
+    const apiLink = grp.api_link || '';
+    apiFull[id] = apiLink;
+    apiMasked[id] = true;
+    const themeVal = grp.theme || 'dark';
+    const vMin = num(grp.views_min, 400), vMax = num(grp.views_max, 500);
+    const lMin = num(grp.likes_min, 10), lMax = num(grp.likes_max, 15);
+    const sMin = num(grp.shares_min, 10), sMax = num(grp.shares_max, 15);
+    const sPerc = num(grp.shares_percent, 30);
+    const vvWeek = num(grp.viral_per_week, 2);
+    const vvMin = num(grp.viral_views_min, 5000), vvMax = num(grp.viral_views_max, 10000);
+    const vlMin = num(grp.viral_likes_min, 150), vlMax = num(grp.viral_likes_max, 300);
+    const vsMin = num(grp.viral_shares_min, 50), vsMax = num(grp.viral_shares_max, 100);
+    const weeklyViews = num(grp.weekly_views, 0);
+    const activeAcc = accounts.filter(a => a && String(a).trim()).length;
+
+    let accFields = '';
+    for (let i = 0; i < 5; i++) {
+      const globalAccNum = (parseInt(id, 10) - 1) * 5 + (i + 1);
+      const accValue = accounts[i] || '';
+      accFields += '<span class="slot-lab">Слот ' + (i + 1) + ' → account_' + globalAccNum + '</span>' +
+        '<input type="text" id="acc_' + id + '_' + i + '" value="' + esc(accValue) + '" placeholder="@username" oninput="onVidOrAcc(\'' + id + '\')">';
+    }
+
+    const legacyViral = `
+      <div class="note">Legacy random: viral + % репостів. При smart_boost order_master бере monthly plan.</div>
+      <label>🎯 % відео з репостами</label>
+      <input type="number" id="sperc_${id}" value="${sPerc}">
+      <label>🔥 Зальотних / тиждень</label>
+      <input type="number" id="vvweek_${id}" value="${vvWeek}">
+      <div class="row">
+        <div class="col"><label>👀 Viral views від</label><input type="number" id="vvmin_${id}" value="${vvMin}"></div>
+        <div class="col"><label>👀 до</label><input type="number" id="vvmax_${id}" value="${vvMax}"></div>
+      </div>
+      <div class="row">
+        <div class="col"><label>❤️ Viral likes від</label><input type="number" id="vlmin_${id}" value="${vlMin}"></div>
+        <div class="col"><label>❤️ до</label><input type="number" id="vlmax_${id}" value="${vlMax}"></div>
+      </div>
+      <div class="row">
+        <div class="col"><label>🔁 Viral shares від</label><input type="number" id="vsmin_${id}" value="${vsMin}"></div>
+        <div class="col"><label>🔁 до</label><input type="number" id="vsmax_${id}" value="${vsMax}"></div>
+      </div>`;
+
+    const useLegacyCollapse = isSmartGroup(id) || smart;
+    const boostExtra = useLegacyCollapse ? '' : legacyViral;
+    const legacyBody = useLegacyCollapse ? legacyViral : '<div class="note">Немає legacy-полів для цієї групи (або вимкни smart щоб повернути сюди viral).</div>';
+    const smartNote = isSmartGroup(id)
+      ? '<div class="note">Група 2–5: smart. Viral / shares_percent — у Legacy; активна накрутка з monthly plan.</div>'
+      : '';
+
+    return `
+    <div class="gcard ${smart ? 'smart' : ''} ${passFilter(id) ? '' : 'hidden'}" id="card_${id}" data-gid="${id}">
+      <div class="ghead" onclick="toggleGroup('${id}')">
+        <div class="ghead-left">
+          <div class="ghead-title">📁 Група ${esc(id)} ${isSmartGroup(id) || smart ? '<span class="badge">smart</span>' : ''}</div>
+          <div class="ghead-meta" id="meta_${id}">${activeAcc} акк · ${videos} vid/день</div>
+        </div>
+        <span class="chev">▼</span>
+      </div>
+      <div class="gbody">
+        ${smartNote}
+        <div class="toggle-row">
+          <div class="tlab">🧠 smart_boost (sb)</div>
+          <label class="switch"><input type="checkbox" id="sb_${id}" ${smart ? 'checked' : ''} onchange="onSmartChange('${id}')"><span class="slider"></span></label>
+        </div>
+
+        <div class="acc open">
+          <div class="acc-h" onclick="toggleAcc(this)">👤 Акаунти <span class="hint">5 слотів</span></div>
+          <div class="acc-b">
+            <label>Відео на акк / день</label>
+            <input type="number" id="vid_${id}" value="${videos}" oninput="onVidOrAcc('${id}')">
+            <div class="slot-box">${accFields}</div>
+          </div>
+        </div>
+
+        <div class="acc">
+          <div class="acc-h" onclick="toggleAcc(this)">📈 Накрутка <span class="hint">views / likes / shares</span></div>
+          <div class="acc-b">
+            <label>API link</label>
+            <div class="api-wrap">
+              <input type="text" id="api_${id}" value="${esc(maskApi(apiLink))}" readonly oninput="onApiInput('${id}', this)" placeholder="https://...">
+              <button class="api-btn" type="button" id="api_btn_${id}" onclick="toggleApiMask('${id}')">показати</button>
+            </div>
+            <label>Тижневі перегляди (wv) — опційно</label>
+            <input type="number" id="wv_${id}" value="${weeklyViews}" placeholder="0 = не задано">
+            <div class="row">
+              <div class="col"><label>👀 Views від</label><input type="number" id="vmin_${id}" value="${vMin}"></div>
+              <div class="col"><label>👀 до</label><input type="number" id="vmax_${id}" value="${vMax}"></div>
+            </div>
+            <div class="row">
+              <div class="col"><label>❤️ Likes від</label><input type="number" id="lmin_${id}" value="${lMin}"></div>
+              <div class="col"><label>❤️ до</label><input type="number" id="lmax_${id}" value="${lMax}"></div>
+            </div>
+            <div class="row">
+              <div class="col"><label>🔁 Shares від</label><input type="number" id="smin_${id}" value="${sMin}"></div>
+              <div class="col"><label>🔁 до</label><input type="number" id="smax_${id}" value="${sMax}"></div>
+            </div>
+            <div id="boost_extra_${id}">${boostExtra}</div>
+          </div>
+        </div>
+
+        <div class="acc">
+          <div class="acc-h" onclick="toggleAcc(this)">🌐 Проксі / тема</div>
+          <div class="acc-b">
+            <label>Проксі (IP:PORT:LOG:PASS)</label>
+            <input type="text" id="proxy_${id}" value="${esc(grp.proxy || '')}" placeholder="185.10.10.1:8000:log:pass">
+            <label>Ротація IP</label>
+            <input type="text" id="rotate_${id}" value="${esc(grp.rotate_link || '')}" placeholder="https://...">
+            <label>Тема скрінів</label>
+            <select id="theme_${id}">
+              <option value="dark" ${themeVal === 'dark' ? 'selected' : ''}>🌑 Темна</option>
+              <option value="light" ${themeVal === 'light' ? 'selected' : ''}>🌕 Світла</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="acc" id="legacy_acc_${id}">
+          <div class="acc-h" onclick="toggleAcc(this)">🗄 Legacy (старий random) <span class="hint">viral / %</span></div>
+          <div class="acc-b" id="legacy_body_${id}">${legacyBody}</div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // Ensure unique ids in template - fix the template literals above used ${id} wrongly in some places
+  // Actually in the return string I mixed - the viral block uses ${id} in template which is JS template - OK since outer is template literal.
+  // Wait - legacyViral uses ${id} and is inside template - good.
+  // But boost_extra and legacy use legacyViral which already interpolated - good.
+
+  window.onSmartChange = function (id) {
+    // Move viral fields between boost_extra and legacy when toggling - keep values by reading current DOM
+    // Simpler: leave fields where they were created; only update badge/card class
+    const card = document.getElementById('card_' + id);
+    const on = document.getElementById('sb_' + id).checked;
+    card.classList.toggle('smart', on);
+    const badgeNeeded = isSmartGroup(id) || on;
+    const title = card.querySelector('.ghead-title');
+    if (title) {
+      const has = title.querySelector('.badge');
+      if (badgeNeeded && !has) title.insertAdjacentHTML('beforeend', ' <span class="badge">smart</span>');
+      if (!badgeNeeded && has) has.remove();
+    }
+  };
+
+  function renderTasks() {
+    const cont = document.getElementById('tasks-root');
+    if (!cont) return;
+    cont.innerHTML = '';
+    if (!tasks.length) {
+      cont.innerHTML = '<div class="note">Таймерів немає — додай перший.</div>';
+      return;
+    }
+    tasks.forEach((task, index) => {
+      let dynamicUploadOptions = '';
+      let dynamicAccountUploads = '';
+      groupIds.forEach(id => {
+        dynamicUploadOptions += '<option value="upload_' + id + '"' + (task.action === 'upload_' + id ? ' selected' : '') + '>📁 Викладка: Група ' + id + '</option>';
+        for (let i = 0; i < 5; i++) {
+          const el = document.getElementById('acc_' + id + '_' + i);
+          if (el) {
+            const acc = el.value.trim().replace(/^@/, '');
+            if (acc) {
+              const username = '@' + acc;
+              const val = 'up1_' + id + '_' + username;
+              dynamicAccountUploads += '<option value="' + esc(val) + '"' + (task.action === val ? ' selected' : '') + '>👤 Викладка: ' + esc(username) + ' (Гр ' + id + ')</option>';
             }
+          }
         }
-    </script>
+      });
+
+      cont.innerHTML += `
+        <div class="task" id="task_${index}">
+          <button class="del" type="button" onclick="deleteTask(${index})">ВИД</button>
+          <label>Що зробити</label>
+          <select id="action_${index}" onchange="updateTask(${index}, 'action', this.value)">
+            <optgroup label="Авто / масові">
+              <option value="pipeline" ${task.action === 'pipeline' ? 'selected' : ''}>🚀 Автодень (pipeline)</option>
+              <option value="upload_all" ${task.action === 'upload_all' ? 'selected' : ''}>🧨 Усі викладки</option>
+              <option value="links" ${task.action === 'links' ? 'selected' : ''}>🔗 Зібрати всі посилання</option>
+              <option value="order" ${task.action === 'order' ? 'selected' : ''}>🛒 Уся накрутка</option>
+            </optgroup>
+            <optgroup label="Окремі групи">${dynamicUploadOptions}</optgroup>
+            <optgroup label="Окремі акаунти">${dynamicAccountUploads}</optgroup>
+            <optgroup label="Додатково">
+              <option value="screens_all" ${task.action === 'screens_all' ? 'selected' : ''}>📸 Усі скріни</option>
+              <option value="stats" ${task.action === 'stats' ? 'selected' : ''}>📈 Статистика</option>
+              <option value="sheets" ${task.action === 'sheets' ? 'selected' : ''}>📊 Google Таблиця</option>
+              <option value="sorter" ${task.action === 'sorter' ? 'selected' : ''}>🔄 Сортування відео</option>
+            </optgroup>
+          </select>
+          <label>Частота</label>
+          <select id="mode_${index}" onchange="changeMode(${index}, this.value)">
+            <option value="daily" ${task.mode === 'daily' ? 'selected' : ''}>🔁 Щодня</option>
+            <option value="weekly" ${task.mode === 'weekly' ? 'selected' : ''}>📅 Раз на тиждень</option>
+            <option value="once" ${task.mode === 'once' ? 'selected' : ''}>🎯 Один раз</option>
+          </select>
+          ${task.mode === 'weekly' ? `
+            <select id="day_${index}" onchange="updateTask(${index}, 'day', this.value)">
+              <option value="mon" ${task.day === 'mon' ? 'selected' : ''}>Пн</option>
+              <option value="tue" ${task.day === 'tue' ? 'selected' : ''}>Вт</option>
+              <option value="wed" ${task.day === 'wed' ? 'selected' : ''}>Ср</option>
+              <option value="thu" ${task.day === 'thu' ? 'selected' : ''}>Чт</option>
+              <option value="fri" ${task.day === 'fri' ? 'selected' : ''}>Пт</option>
+              <option value="sat" ${task.day === 'sat' ? 'selected' : ''}>Сб</option>
+              <option value="sun" ${task.day === 'sun' ? 'selected' : ''}>Нд</option>
+            </select>` : ''}
+          ${task.mode === 'once' ? `
+            <input type="date" id="date_${index}" value="${esc(task.date || '')}" onchange="updateTask(${index}, 'date', this.value)">` : ''}
+          <label>Час</label>
+          <input type="time" id="time_${index}" value="${esc(task.time || '12:00')}" onchange="updateTask(${index}, 'time', this.value)">
+        </div>`;
+    });
+  }
+
+  window.addTask = function () {
+    tasks.push({ action: 'pipeline', mode: 'daily', time: '12:00', day: 'mon', date: '' });
+    renderTasks();
+  };
+  window.deleteTask = function (idx) { tasks.splice(idx, 1); renderTasks(); };
+  window.updateTask = function (idx, key, val) { tasks[idx][key] = val; };
+  window.changeMode = function (idx, newMode) { tasks[idx].mode = newMode; renderTasks(); };
+
+  window.saveData = function () {
+    try {
+      const payload = { s: tasks, g: {} };
+      groupIds.forEach(id => {
+        const accs = [];
+        for (let i = 0; i < 5; i++) {
+          const el = document.getElementById('acc_' + id + '_' + i);
+          if (el) accs.push(el.value.trim().replace(/^@/, ''));
+        }
+        while (accs.length > 0 && accs[accs.length - 1] === '') accs.pop();
+
+        // commit api from visible input if unmasked
+        const apiEl = document.getElementById('api_' + id);
+        if (apiEl && !apiMasked[id] && !String(apiEl.value).startsWith('••••')) {
+          apiFull[id] = apiEl.value;
+        }
+
+        const sbEl = document.getElementById('sb_' + id);
+        const wvEl = document.getElementById('wv_' + id);
+
+        payload.g[id] = {
+          v: num(document.getElementById('vid_' + id).value, 0),
+          a: accs,
+          al: apiFull[id] || '',
+          v1: num(document.getElementById('vmin_' + id).value, 0),
+          v2: num(document.getElementById('vmax_' + id).value, 0),
+          l1: num(document.getElementById('lmin_' + id).value, 0),
+          l2: num(document.getElementById('lmax_' + id).value, 0),
+          s1: num(document.getElementById('smin_' + id).value, 0),
+          s2: num(document.getElementById('smax_' + id).value, 0),
+          sp: num((document.getElementById('sperc_' + id) || {}).value, 0),
+          vw: num((document.getElementById('vvweek_' + id) || {}).value, 0),
+          vv1: num((document.getElementById('vvmin_' + id) || {}).value, 0),
+          vv2: num((document.getElementById('vvmax_' + id) || {}).value, 0),
+          vl1: num((document.getElementById('vlmin_' + id) || {}).value, 0),
+          vl2: num((document.getElementById('vlmax_' + id) || {}).value, 0),
+          vs1: num((document.getElementById('vsmin_' + id) || {}).value, 0),
+          vs2: num((document.getElementById('vsmax_' + id) || {}).value, 0),
+          th: (document.getElementById('theme_' + id) || {}).value || 'dark',
+          px: (document.getElementById('proxy_' + id) || {}).value || '',
+          rl: (document.getElementById('rotate_' + id) || {}).value || '',
+          sb: !!(sbEl && sbEl.checked),
+          wv: num(wvEl && wvEl.value, 0)
+        };
+      });
+
+      const jsonString = JSON.stringify(payload);
+      if (tg && tg.sendData) {
+        tg.sendData(jsonString);
+        toast('Відправлено в бот…');
+      } else {
+        console.log(payload);
+        toast('Немає Telegram WebApp — дивись console');
+        alert('Payload length: ' + jsonString.length);
+      }
+    } catch (e) {
+      alert('Помилка: ' + e.message);
+    }
+  };
+
+  // Boot
+  const urlParams = new URLSearchParams(window.location.search);
+  const dataParam = urlParams.get('data');
+  if (!dataParam) {
+    document.getElementById('empty').classList.remove('hidden');
+  } else {
+    try {
+      const config = JSON.parse(decodeURIComponent(dataParam));
+      const root = document.getElementById('groups-root');
+      const ids = [];
+      for (const key in config) {
+        if (key !== 'schedules' && !isNaN(key)) ids.push(key);
+      }
+      ids.sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+      groupIds = ids;
+      let html = '';
+      ids.forEach(key => { html += buildGroupCard(key, config[key] || {}); });
+      root.innerHTML = html || '<div class="note">У ?data= немає груп.</div>';
+      if (ids.length) document.getElementById('card_' + ids[0]).classList.add('open');
+      if (config.schedules) tasks = config.schedules;
+      document.getElementById('main-ui').classList.remove('hidden');
+      document.getElementById('savebar').classList.remove('hidden');
+      renderTasks();
+    } catch (e) {
+      console.error(e);
+      document.getElementById('empty').classList.remove('hidden');
+      document.getElementById('empty').querySelector('p').textContent = 'Помилка парсингу ?data=: ' + e.message;
+    }
+  }
+})();
+</script>
 </body>
 </html>
